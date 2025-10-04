@@ -4,6 +4,7 @@ import { DayPicker, type DayProps } from "react-day-picker";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { JournalEntry, Mood } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import type { Timestamp } from "firebase/firestore";
 
 const moodColors: Record<Mood, string> = {
   Happy: "bg-green-500",
@@ -13,13 +14,19 @@ const moodColors: Record<Mood, string> = {
   Sad: "bg-gray-500",
 };
 
+function toDate(date: Date | Timestamp): Date {
+    return date instanceof Date ? date : date.toDate();
+}
+
 function CustomDay(props: DayProps & { entries: JournalEntry[] }) {
   const { date, entries } = props;
   const entry = entries.find(
-    (e) =>
-      e.date.getDate() === date.getDate() &&
-      e.date.getMonth() === date.getMonth() &&
-      e.date.getFullYear() === date.getFullYear()
+    (e) => {
+        const entryDate = toDate(e.date);
+        return entryDate.getDate() === date.getDate() &&
+        entryDate.getMonth() === date.getMonth() &&
+        entryDate.getFullYear() === date.getFullYear();
+    }
   );
 
   if (entry) {

@@ -1,19 +1,21 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { format, parseISO } from "date-fns";
+import { useState, useTransition, useEffect } from "react";
+import { format } from "date-fns";
+import type { Timestamp } from "firebase/firestore";
 import { Smile, Meh, Frown, Sparkles, Plus, Loader2, BookCheck, Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import type { JournalEntry, Mood } from "@/lib/types";
 import { analyzeEntryAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const moods: { name: Mood; icon: React.ReactNode }[] = [
   { name: "Happy", icon: <Smile className="w-8 h-8 text-green-500" /> },
@@ -23,13 +25,27 @@ const moods: { name: Mood; icon: React.ReactNode }[] = [
   { name: "Sad", icon: <Frown className="w-8 h-8 text-gray-500" /> },
 ];
 
-export function JournalView({ initialPrompt, onAddJournalEntry, entries, hasTodayEntry }: { initialPrompt: string; onAddJournalEntry: (entry: Omit<JournalEntry, 'id' | 'date' | 'analysis'> & { analysis?: any }) => void; entries: JournalEntry[], hasTodayEntry: boolean }) {
+function toDate(date: Date | Timestamp): Date {
+    return date instanceof Date ? date : date.toDate();
+}
+
+export function JournalView({ initialPrompt, onAddJournalEntry, entries, hasTodayEntry, loading }: { initialPrompt: string; onAddJournalEntry: (entry: Omit<JournalEntry, 'id' | 'date' | 'analysis' | 'userId'> & { analysis?: any }) => void; entries: JournalEntry[], hasTodayEntry: boolean, loading: boolean }) {
   const [showForm, setShowForm] = useState(false);
   const [mood, setMood] = useState<Mood>("Okay");
   const [painLevel, setPainLevel] = useState([3]);
   const [entryText, setEntryText] = useState(initialPrompt);
   const [isAnalyzing, startAnalyzing] = useTransition();
   const { toast } = useToast();
+
+  useEffect(() => {
+    setEntryText(initialPrompt);
+  }, [initialPrompt]);
+  
+  useEffect(() => {
+    if (!loading && entries.length === 0 && !hasTodayEntry) {
+      setShowForm(true);
+    }
+  }, [loading, entries, hasTodayEntry]);
 
   const handleSubmit = () => {
     if (!entryText.trim()) {
@@ -53,7 +69,7 @@ export function JournalView({ initialPrompt, onAddJournalEntry, entries, hasToda
     });
   };
 
-  if (showForm || initialPrompt || (entries.length === 0 && !hasTodayEntry)) {
+  if (showForm || initialPrompt) {
     return (
       <div className="p-4 space-y-6">
         <div className="text-center">
@@ -105,14 +121,28 @@ export function JournalView({ initialPrompt, onAddJournalEntry, entries, hasToda
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold font-headline text-primary">Your Journal</h2>
-        {!hasTodayEntry && (
+        {!hasTodayEntry && !loading && (
           <Button onClick={() => setShowForm(true)}>
             <Plus className="mr-2 h-4 w-4"/> New Entry
           </Button>
         )}
       </div>
 
-      {entries.length === 0 && (
+      {loading && (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-1/2" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4 mt-2" />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {!loading && entries.length === 0 && !hasTodayEntry && (
          <Alert className="bg-secondary">
          <Info className="h-4 w-4 text-secondary-foreground" />
          <AlertTitle>No entries yet</AlertTitle>
@@ -122,11 +152,11 @@ export function JournalView({ initialPrompt, onAddJournalEntry, entries, hasToda
        </Alert>
       )}
 
-      {entries.sort((a, b) => b.date.getTime() - a.date.getTime()).map(entry => (
+      {!loading && entries.sort((a, b) => toDate(b.date).getTime() - toDate(a.date).getTime()).map(entry => (
         <Card key={entry.id}>
           <CardHeader>
             <CardTitle className="flex justify-between items-start">
-              <span>{format(entry.date, 'MMMM d, yyyy')}</span>
+              <span>{format(toDate(entry.date), 'MMMM d, yyyy')}</span>
               <div className="text-right text-sm font-normal">
                 <Badge variant={entry.mood === 'Happy' || entry.mood === 'Calm' ? 'default' : 'secondary'} className="bg-primary/10 text-primary">{entry.mood}</Badge>
                 <p className="text-muted-foreground mt-1">Pain: {entry.painLevel}/10</p>

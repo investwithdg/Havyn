@@ -1,51 +1,97 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { BotMessageSquare, BookHeart, CalendarDays } from "lucide-react";
-
+import { useState, useMemo, useEffect } from "react";
+import { BotMessageSquare, BookHeart, CalendarDays, LogOut } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/havyn/logo";
 import { UserAvatar } from "@/components/havyn/user-avatar";
 import { ChatView } from "@/components/havyn/chat-view";
 import { JournalView } from "@/components/havyn/journal-view";
 import { CalendarView } from "@/components/havyn/calendar-view";
-import type { JournalEntry, Mood } from "@/lib/types";
+import type { JournalEntry } from "@/lib/types";
+import { useAuth, useUser, useCollection } from "@/firebase";
+import { collection, addDoc, serverTimestamp, query, where } from "firebase/firestore";
+import { useFirestore } from "@/firebase";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 export default function HavynAppPage() {
-  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const { user, loading: userLoading } = useUser();
+  const firestore = useFirestore();
+  const auth = useAuth();
+  const router = useRouter();
+
   const [activeTab, setActiveTab] = useState("home");
   const [prompt, setPrompt] = useState<string>("");
+
+  const journalEntriesRef = useMemo(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, "users", user.uid, "journalEntries");
+  }, [firestore, user]);
+
+  const { data: journalEntries, loading: entriesLoading } = useCollection<JournalEntry>(journalEntriesRef);
+
+  useEffect(() => {
+    if (!userLoading && !user) {
+      router.push("/login");
+    }
+  }, [user, userLoading, router]);
 
   const handleNewPrompt = (newPrompt: string) => {
     setPrompt(newPrompt);
     setActiveTab("journal");
   };
 
-  const addJournalEntry = (entry: Omit<JournalEntry, "id" | "date">) => {
-    const newEntry: JournalEntry = {
+  const addJournalEntry = async (entry: Omit<JournalEntry, "id" | "date">) => {
+    if (!journalEntriesRef) return;
+    const newEntry = {
       ...entry,
-      id: Date.now().toString(),
-      date: new Date(),
+      date: serverTimestamp(),
+      userId: user?.uid,
     };
-    setJournalEntries((prev) => [...prev, newEntry]);
+    await addDoc(journalEntriesRef, newEntry);
     setPrompt(""); // Clear prompt after use
   };
 
   const todayEntry = useMemo(() => {
+    if (!journalEntries) return null;
     const today = new Date();
-    return journalEntries.find(
-      (entry) =>
-        entry.date.getDate() === today.getDate() &&
-        entry.date.getMonth() === today.getMonth() &&
-        entry.date.getFullYear() === today.getFullYear()
-    );
+    today.setHours(0, 0, 0, 0);
+
+    return journalEntries.find((entry) => {
+        if (!entry.date) return false;
+        // Firestore timestamps can be seconds/nanoseconds objects
+        const entryDate = new Date(entry.date.seconds * 1000);
+        entryDate.setHours(0, 0, 0, 0);
+        return entryDate.getTime() === today.getTime();
+    });
   }, [journalEntries]);
+  
+  const handleSignOut = async () => {
+    if (auth) {
+      await auth.signOut();
+      router.push('/login');
+    }
+  };
+
+  if (userLoading || !user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
       <header className="flex items-center justify-between p-4 border-b shrink-0">
         <Logo />
-        <UserAvatar />
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={handleSignOut}>
+            <LogOut className="w-5 h-5 text-muted-foreground" />
+          </Button>
+          <UserAvatar user={user} />
+        </div>
       </header>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-grow h-full">
@@ -57,12 +103,13 @@ export default function HavynAppPage() {
             <JournalView 
               initialPrompt={prompt} 
               onAddJournalEntry={addJournalEntry}
-              entries={journalEntries}
+              entries={journalEntries || []}
               hasTodayEntry={!!todayEntry}
+              loading={entriesLoading}
             />
           </TabsContent>
           <TabsContent value="calendar" className="mt-0">
-            <CalendarView entries={journalEntries} />
+            <CalendarView entries={journalEntries || []} />
           </TabsContent>
         </main>
         
@@ -82,5 +129,25 @@ export default function HavynAppPage() {
         </TabsList>
       </Tabs>
     </div>
+  );
+}
+
+// Add a simple loader component
+function Loader2({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
   );
 }
