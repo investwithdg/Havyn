@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { BotMessageSquare, BookHeart, CalendarDays, LogOut } from "lucide-react";
+import { useState, useMemo, useEffect, useTransition } from "react";
+import { BotMessageSquare, BookHeart, CalendarDays, LogOut, Sparkles, Loader2 as Spinner } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/havyn/logo";
 import { UserAvatar } from "@/components/havyn/user-avatar";
@@ -9,11 +9,37 @@ import { ChatView } from "@/components/havyn/chat-view";
 import { JournalView } from "@/components/havyn/journal-view";
 import { CalendarView } from "@/components/havyn/calendar-view";
 import type { JournalEntry } from "@/lib/types";
-import { useAuth, useUser, useCollection } from "@/firebase";
-import { collection, addDoc, serverTimestamp, query, where } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
+import { useAuth, useUser, useCollection, useDoc, useFirestore } from "@/firebase";
+import { collection, addDoc, serverTimestamp, doc, setDoc, Timestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { generatePromptAction } from "./actions";
+
+function WelcomeMessage({ onNewPrompt }: { onNewPrompt: (prompt: string) => void }) {
+  const [welcomePrompt, setWelcomePrompt] = useState("Welcome back. Take a moment for yourself.");
+  const [isGenerating, startGenerating] = useTransition();
+
+  const generateWelcomePrompt = () => {
+    startGenerating(async () => {
+      const result = await generatePromptAction({ mood: "neutral", promptType: "check-in" });
+      onNewPrompt(result.prompt);
+    });
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-center p-8">
+      <h1 className="text-2xl font-headline text-primary mb-4">{welcomePrompt}</h1>
+      <p className="text-muted-foreground mb-8 max-w-md">
+        Your journal is a private space to reflect and grow. Start your daily entry when you're ready.
+      </p>
+      <Button onClick={generateWelcomePrompt} disabled={isGenerating}>
+        {isGenerating ? <Spinner className="mr-2 animate-spin" /> : <Sparkles className="mr-2" />}
+        Start Today's Journal
+      </Button>
+    </div>
+  );
+}
+
 
 export default function HavynAppPage() {
   const { user, loading: userLoading } = useUser();
@@ -23,6 +49,12 @@ export default function HavynAppPage() {
 
   const [activeTab, setActiveTab] = useState("home");
   const [prompt, setPrompt] = useState<string>("");
+
+  const userRef = useMemo(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, "users", user.uid);
+  }, [firestore, user]);
+  const { data: userProfile } = useDoc(userRef);
 
   const journalEntriesRef = useMemo(() => {
     if (!firestore || !user) return null;
@@ -43,13 +75,14 @@ export default function HavynAppPage() {
   };
 
   const addJournalEntry = async (entry: Omit<JournalEntry, "id" | "date">) => {
-    if (!journalEntriesRef) return;
+    if (!journalEntriesRef || !userRef) return;
     const newEntry = {
       ...entry,
       date: serverTimestamp(),
       userId: user?.uid,
     };
     await addDoc(journalEntriesRef, newEntry);
+    await setDoc(userRef, { lastPromptDate: new Date().toISOString() }, { merge: true });
     setPrompt(""); // Clear prompt after use
   };
 
@@ -61,7 +94,7 @@ export default function HavynAppPage() {
     return journalEntries.find((entry) => {
         if (!entry.date) return false;
         // Firestore timestamps can be seconds/nanoseconds objects
-        const entryDate = new Date(entry.date.seconds * 1000);
+        const entryDate = entry.date instanceof Timestamp ? entry.date.toDate() : new Date(entry.date);
         entryDate.setHours(0, 0, 0, 0);
         return entryDate.getTime() === today.getTime();
     });
@@ -74,13 +107,15 @@ export default function HavynAppPage() {
     }
   };
 
-  if (userLoading || !user) {
+  if (userLoading || !user || entriesLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
+
+  const showWelcome = activeTab === "home" && !todayEntry;
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
@@ -97,7 +132,11 @@ export default function HavynAppPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-grow h-full">
         <main className="flex-grow pb-20 overflow-y-auto">
           <TabsContent value="home" className="mt-0">
-            <ChatView onNewPrompt={handleNewPrompt} />
+            {showWelcome ? (
+              <WelcomeMessage onNewPrompt={handleNewPrompt} />
+            ) : (
+              <ChatView onNewPrompt={handleNewPrompt} />
+            )}
           </TabsContent>
           <TabsContent value="journal" className="mt-0">
             <JournalView 

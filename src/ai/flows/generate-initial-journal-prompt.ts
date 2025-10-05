@@ -16,7 +16,13 @@ const GenerateInitialJournalPromptInputSchema = z.object({
     .describe("The user's current mood, e.g., happy, sad, anxious."),
   recentThoughts: z
     .string()
+    .optional()
     .describe("A brief summary of the user's recent thoughts and experiences."),
+  promptType: z
+    .enum(['greeting', 'check-in'])
+    .describe(
+      'The type of prompt to generate. "greeting" for a simple welcome, "check-in" for a daily reflection.'
+    ),
 });
 export type GenerateInitialJournalPromptInput = z.infer<
   typeof GenerateInitialJournalPromptInputSchema
@@ -41,14 +47,28 @@ const prompt = ai.definePrompt({
   name: 'generateInitialJournalPrompt',
   input: {schema: GenerateInitialJournalPromptInputSchema},
   output: {schema: GenerateInitialJournalPromptOutputSchema},
-  prompt: `You are a helpful AI assistant designed to provide personalized journaling prompts to users.
+  prompt: `You are a helpful AI assistant for a journaling app called Havyn. Your goal is to provide a warm, encouraging, and context-aware prompt.
 
-  Based on the user's current mood and recent thoughts, generate a single, specific, and thought-provoking journaling prompt to help them explore their feelings and experiences.
+  Based on the requested prompt type, generate a single, specific, and thought-provoking journaling prompt.
+
+  {{#if eq promptType 'greeting'}}
+  Generate a short, welcoming message for the user. It's the first thing they see when they open the app. Be warm and inviting. Example: "Welcome back. Ready to reflect?"
+  {{/if}}
+
+  {{#if eq promptType 'check-in'}}
+  The user wants a daily check-in prompt.
+  - If recent thoughts are provided, use them to create a tailored and empathetic prompt.
+  - If no recent thoughts are given, create a general but insightful prompt related to their mood.
+  - Your response should ONLY be the prompt itself, without any conversational filler.
 
   Mood: {{{mood}}}
+  {{#if recentThoughts}}
   Recent Thoughts: {{{recentThoughts}}}
+  {{/if}}
 
-  Journaling Prompt:`,
+  Journaling Prompt:
+  {{/if}}
+  `,
 });
 
 const generateInitialJournalPromptFlow = ai.defineFlow(

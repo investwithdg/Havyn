@@ -22,6 +22,11 @@
                     "type": "string",
                     "format": "uri",
                     "description": "URL of the user's profile picture."
+                },
+                "lastPromptDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The date the user last received a journaling prompt to help with rotation."
                 }
             },
             "required": ["uid", "email"]

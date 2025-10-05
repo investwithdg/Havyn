@@ -18,6 +18,6 @@ export type JournalEntry = {
 export type Message = {
   id: string;
   role: "user" | "assistant";
-  content: string | GenerateInitialJournalPromptOutput;
+  content: string | { prompt: string };
   isLoading?: boolean;
 };

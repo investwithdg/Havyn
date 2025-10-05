@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 const initialMessage: Message = {
   id: "initial",
   role: "assistant",
-  content: "Hello! I'm Havyn, your personal companion. How are you feeling today? What's on your mind?",
+  content: "Hello! I'm Havyn, your personal companion. Feel free to share what's on your mind. If you'd like a prompt, just ask!",
 };
 
 export function ChatView({ onNewPrompt }: { onNewPrompt: (prompt: string) => void }) {
@@ -44,12 +44,12 @@ export function ChatView({ onNewPrompt }: { onNewPrompt: (prompt: string) => voi
 
     startTransition(async () => {
       try {
-        const result = await generatePromptAction({ mood: "unspecified", recentThoughts: input });
+        const result = await generatePromptAction({ mood: "unspecified", recentThoughts: input, promptType: "check-in" });
         if (result && result.prompt) {
           const assistantMessage: Message = {
             id: (Date.now() + 1).toString(),
             role: "assistant",
-            content: result,
+            content: { prompt: result.prompt },
           };
           setMessages((prev) => [...prev.slice(0, -1), assistantMessage]);
         } else {
