@@ -1,45 +1,19 @@
 "use client";
 
 import { useState, useMemo, useEffect, useTransition } from "react";
-import { BotMessageSquare, BookHeart, CalendarDays, LogOut, Sparkles, Loader2 as Spinner } from "lucide-react";
+import { BotMessageSquare, BookHeart, CalendarDays, LogOut, Loader2 as Spinner } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/havyn/logo";
 import { UserAvatar } from "@/components/havyn/user-avatar";
 import { ChatView } from "@/components/havyn/chat-view";
 import { JournalView } from "@/components/havyn/journal-view";
 import { CalendarView } from "@/components/havyn/calendar-view";
+import { PromptCTA } from "@/components/havyn/prompt-cta";
 import type { JournalEntry } from "@/lib/types";
 import { useAuth, useUser, useCollection, useDoc, useFirestore } from "@/firebase";
 import { collection, addDoc, serverTimestamp, doc, setDoc, Timestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { generatePromptAction } from "./actions";
-
-function WelcomeMessage({ onNewPrompt }: { onNewPrompt: (prompt: string) => void }) {
-  const [welcomePrompt, setWelcomePrompt] = useState("Welcome back. Take a moment for yourself.");
-  const [isGenerating, startGenerating] = useTransition();
-
-  const generateWelcomePrompt = () => {
-    startGenerating(async () => {
-      const result = await generatePromptAction({ mood: "neutral", promptType: "check-in" });
-      onNewPrompt(result.prompt);
-    });
-  };
-
-  return (
-    <div className="flex flex-col items-center justify-center h-full text-center p-8">
-      <h1 className="text-2xl font-headline text-primary mb-4">{welcomePrompt}</h1>
-      <p className="text-muted-foreground mb-8 max-w-md">
-        Your journal is a private space to reflect and grow. Start your daily entry when you're ready.
-      </p>
-      <Button onClick={generateWelcomePrompt} disabled={isGenerating}>
-        {isGenerating ? <Spinner className="mr-2 animate-spin" /> : <Sparkles className="mr-2" />}
-        Start Today's Journal
-      </Button>
-    </div>
-  );
-}
-
 
 export default function HavynAppPage() {
   const { user, loading: userLoading } = useUser();
@@ -48,7 +22,7 @@ export default function HavynAppPage() {
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState("home");
-  const [prompt, setPrompt] = useState<string>("");
+  const [initialPrompt, setInitialPrompt] = useState<string>("");
 
   const userRef = useMemo(() => {
     if (!firestore || !user) return null;
@@ -70,7 +44,7 @@ export default function HavynAppPage() {
   }, [user, userLoading, router]);
 
   const handleNewPrompt = (newPrompt: string) => {
-    setPrompt(newPrompt);
+    setInitialPrompt(newPrompt);
     setActiveTab("journal");
   };
 
@@ -83,7 +57,7 @@ export default function HavynAppPage() {
     };
     await addDoc(journalEntriesRef, newEntry);
     await setDoc(userRef, { lastPromptDate: new Date().toISOString() }, { merge: true });
-    setPrompt(""); // Clear prompt after use
+    setInitialPrompt(""); // Clear prompt after use
   };
 
   const todayEntry = useMemo(() => {
@@ -133,17 +107,16 @@ export default function HavynAppPage() {
         <main className="flex-grow pb-20 overflow-y-auto">
           <TabsContent value="home" className="mt-0">
             {showWelcome ? (
-              <WelcomeMessage onNewPrompt={handleNewPrompt} />
+              <PromptCTA onNewPrompt={handleNewPrompt} />
             ) : (
               <ChatView onNewPrompt={handleNewPrompt} />
             )}
           </TabsContent>
           <TabsContent value="journal" className="mt-0">
             <JournalView 
-              initialPrompt={prompt} 
+              initialPrompt={initialPrompt} 
               onAddJournalEntry={addJournalEntry}
               entries={journalEntries || []}
-              hasTodayEntry={!!todayEntry}
               loading={entriesLoading}
             />
           </TabsContent>
