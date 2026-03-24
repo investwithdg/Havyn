@@ -34,30 +34,60 @@ export async function recordDailyCheckIn(
     const journalEntriesRef = collection(firestore, "users", userId, "journalEntries");
     const userRef = doc(firestore, "users", userId);
 
-    // Analyze entry (graceful failure)
+    // Look for today's entry to upsert
+    const today = getTodayStart();
+    const tomorrow = getTomorrowStart();
+    const todayQuery = query(journalEntriesRef, where("date", ">=", today), where("date", "<", tomorrow), limit(1));
+    const snapshot = await getDocs(todayQuery);
+
     let analysis = null;
     try {
-      analysis = await analyzeEntryAction({ entryText: checkInData.entryText });
+      if (checkInData.entryText && checkInData.entryText.trim().length > 10) {
+        analysis = await analyzeEntryAction({ entryText: checkInData.entryText });
+      }
     } catch (error) {
       console.warn("Analysis failed, proceeding without it:", error);
     }
 
-    // Create entry
     const entryData = {
       ...checkInData,
-      date: serverTimestamp(),
       userId,
-      analysis,
+      ...(analysis ? { analysis } : {})
     };
 
-    const docRef = await addDoc(journalEntriesRef, entryData);
+    let docId = "";
+
+    if (!snapshot.empty) {
+      // Upsert existing document
+      const existingDoc = snapshot.docs[0];
+      const existingData = existingDoc.data();
+      
+      const mergedEntry = {
+        ...existingData,
+        mood: checkInData.mood || existingData.mood,
+        painLevel: checkInData.painLevel !== undefined ? checkInData.painLevel : existingData.painLevel,
+        entryText: checkInData.entryText || existingData.entryText, // Don't wipe text if empty
+        ...((analysis || existingData.analysis) ? { analysis: analysis || existingData.analysis } : {})
+      };
+      
+      await setDoc(doc(firestore, "users", userId, "journalEntries", existingDoc.id), mergedEntry, { merge: true });
+      docId = existingDoc.id;
+    } else {
+      // Create new document
+      const finalEntry = {
+        ...entryData,
+        date: serverTimestamp()
+      };
+      const docRef = await addDoc(journalEntriesRef, finalEntry);
+      docId = docRef.id;
+    }
     
     // Update user's last prompt date
     await setDoc(userRef, { lastPromptDate: new Date().toISOString() }, { merge: true });
 
     return {
       success: true,
-      entry: { id: docRef.id, ...entryData } as JournalEntry,
+      entry: { id: docId, ...entryData } as JournalEntry,
     };
   } catch (error) {
     return {

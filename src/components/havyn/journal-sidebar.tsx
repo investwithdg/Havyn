@@ -6,7 +6,12 @@ import type { JournalEntry } from "@/lib/types";
 
 export function JournalSidebar({ entries = [] }: { entries?: JournalEntry[] }) {
   return (
-    <div className="w-full h-full bg-[#3d3d3d] text-[#e8e6e3] pt-16 px-6 overflow-y-auto">
+    <div className="w-full h-full bg-[#3d3d3d] text-[#e8e6e3] pt-16 px-6 overflow-y-auto relative">
+      {/* Wayfinding */}
+      <div className="absolute top-1/2 -left-6 -translate-y-1/2 opacity-30 text-xs font-medium uppercase tracking-widest text-zinc-400 -rotate-90 origin-left">
+         <span className="flex items-center gap-1">Swipe Journal</span>
+      </div>
+
       <h2 className="text-xl font-medium mb-6">Past Entries</h2>
       <div className="space-y-4">
         {entries.length === 0 ? (

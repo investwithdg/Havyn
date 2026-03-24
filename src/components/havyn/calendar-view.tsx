@@ -47,7 +47,11 @@ function CustomDay(props: DayProps & { entries: JournalEntry[] }) {
 
 export function CalendarView({ entries }: { entries: JournalEntry[] }) {
   return (
-    <div className="p-4">
+    <div className="p-4 h-full relative flex flex-col justify-center">
+      {/* Wayfinding */}
+      <div className="absolute top-1/2 -right-6 -translate-y-1/2 opacity-30 text-xs font-medium uppercase tracking-widest text-zinc-400 rotate-90 origin-right">
+         <span className="flex items-center gap-1">Swipe Home</span>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle className="font-headline text-primary">Your Journey</CardTitle>

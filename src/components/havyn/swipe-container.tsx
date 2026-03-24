@@ -91,27 +91,28 @@ export function SwipeContainer({
         onDragEnd={handleDragEnd}
         animate={{
           x: -activeCoord.x * windowSize.width,
-          y: activeCoord.y * windowSize.height, // Note: standard screen Y goes down, but math uses visual intuition. if activeCoord.y = 1 (check-in above), we want y = windowHeight to push home down
+          y: activeCoord.y * windowSize.height,
         }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        dragDirectionLock
       >
         {/* Render all screens in absolute positions relative to this container */}
-        <div className="absolute w-screen h-screen" style={{ left: 0, top: 0 }}>
+        <div className="absolute w-screen h-[100dvh]" style={{ left: 0, top: 0 }}>
           {homeScreen}
         </div>
-        <div className="absolute w-screen h-screen" style={{ left: "-100vw", top: 0 }}>
+        <div className="absolute w-screen h-[100dvh]" style={{ left: "-100vw", top: 0 }}>
           {calendarScreen}
         </div>
-        <div className="absolute w-screen h-screen" style={{ left: "100vw", top: 0 }}>
+        <div className="absolute w-screen h-[100dvh]" style={{ left: "100vw", top: 0 }}>
           {journalScreen}
         </div>
-        <div className="absolute w-screen h-screen" style={{ left: "200vw", top: 0 }}>
+        <div className="absolute w-screen h-[100dvh]" style={{ left: "200vw", top: 0 }}>
           {journalSidebar}
         </div>
-        <div className="absolute w-screen h-screen" style={{ left: 0, top: "-100vh" }}>
+        <div className="absolute w-screen h-[100dvh]" style={{ left: 0, top: "-100dvh" }}>
           {checkInScreen}
         </div>
-        <div className="absolute w-screen h-screen" style={{ left: 0, top: "100vh" }}>
+        <div className="absolute w-screen h-[100dvh]" style={{ left: 0, top: "100dvh" }}>
           {escalateScreen}
         </div>
       </motion.div>
