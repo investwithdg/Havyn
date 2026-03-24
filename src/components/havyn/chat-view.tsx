@@ -95,7 +95,7 @@ export function ChatView({ onNewPrompt }: { onNewPrompt: (prompt: string) => voi
                     <Button
                       size="sm"
                       className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
-                      onClick={() => onNewPrompt(message.content.prompt)}
+                      onClick={() => onNewPrompt((message.content as any).prompt)}
                     >
                       <Sparkles className="w-4 h-4 mr-2" />
                       Start Journaling

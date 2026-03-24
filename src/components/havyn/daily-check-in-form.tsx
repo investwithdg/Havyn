@@ -14,7 +14,7 @@ import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { Mood } from "@/lib/types";
-import { MOOD_CONFIG, formatCharacterCount, generateTimeBasedId } from "@/lib/ui-utils";
+import { MOOD_CONFIG, formatCharacterCount } from "@/lib/ui-utils";
 
 const moods: { name: Mood; icon: React.ReactNode }[] = [
   { name: "Happy", icon: <Smile className="w-8 h-8" /> },

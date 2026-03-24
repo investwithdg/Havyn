@@ -45,11 +45,11 @@ export function DailyCheckIn({ initialPrompt, onAddJournalEntry, onEntryAdded }:
     startAnalyzing(async () => {
       try {
         const analysis = await analyzeEntryAction({ entryText });
-        onAddJournalEntry({ mood, painLevel: painLevel[0], entryText, analysis });
+        onAddJournalEntry({ mood, painLevel: painLevel[0], entryText, analysis, userId: "unknown" });
         toast({ title: "Journal entry saved!", description: "Your thoughts are safe with us.", variant: "default" });
       } catch (error) {
         console.error("Analysis failed, saving entry without it.", error)
-        onAddJournalEntry({ mood, painLevel: painLevel[0], entryText, analysis: null });
+        onAddJournalEntry({ mood, painLevel: painLevel[0], entryText, analysis: null, userId: "unknown" });
         toast({ title: "Entry saved without analysis", description: "We couldn't analyze your entry right now, but it's saved.", variant: "default" });
       } finally {
         setEntryText("");

@@ -127,5 +127,5 @@ export function shouldGenerateNewPrompt(
   const today = new Date();
   const daysDiff = Math.floor((today.getTime() - lastUsed.getTime()) / (1000 * 60 * 60 * 24));
   
-  return daysDiff >= 1 || (promptHistory && promptHistory.length > 3);
+  return !!(daysDiff >= 1 || (promptHistory && promptHistory.length > 3));
 }

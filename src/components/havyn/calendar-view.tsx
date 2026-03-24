@@ -32,7 +32,7 @@ function CustomDay(props: DayProps & { entries: JournalEntry[] }) {
   if (entry) {
     return (
       <div className="relative flex items-center justify-center h-full">
-        {props.children}
+        {(props as any).children || date.getDate()}
         <div
           className={cn(
             "absolute bottom-1 w-1.5 h-1.5 rounded-full",
@@ -42,7 +42,7 @@ function CustomDay(props: DayProps & { entries: JournalEntry[] }) {
       </div>
     );
   }
-  return <>{props.children}</>;
+  return <>{(props as any).children || date.getDate()}</>;
 }
 
 export function CalendarView({ entries }: { entries: JournalEntry[] }) {
