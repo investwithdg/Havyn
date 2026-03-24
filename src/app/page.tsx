@@ -16,7 +16,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 export default function HavynAppPage() {
-  const { user, loading: userLoading } = useUser();
+  const user = { uid: "mock-user", displayName: "Test User", email: "test@example.com", photoURL: "" } as any;
+  const userLoading = false;
   const firestore = useFirestore();
   const auth = useAuth();
   const router = useRouter();
@@ -24,39 +25,22 @@ export default function HavynAppPage() {
   const [activeTab, setActiveTab] = useState("home");
   const [initialPrompt, setInitialPrompt] = useState<string>("");
 
-  const userRef = useMemo(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, "users", user.uid);
-  }, [firestore, user]);
-  const { data: userProfile } = useDoc(userRef);
-
-  const journalEntriesRef = useMemo(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, "users", user.uid, "journalEntries");
-  }, [firestore, user]);
-
-  const { data: journalEntries, loading: entriesLoading } = useCollection<JournalEntry>(journalEntriesRef);
-
-  useEffect(() => {
-    if (!userLoading && !user) {
-      router.push("/login");
-    }
-  }, [user, userLoading, router]);
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const entriesLoading = false;
 
   const handleNewPrompt = (newPrompt: string) => {
     setInitialPrompt(newPrompt);
     setActiveTab("journal");
   };
 
-  const addJournalEntry = async (entry: Omit<JournalEntry, "id" | "date">) => {
-    if (!journalEntriesRef || !userRef) return;
+  const addJournalEntry = async (entry: Omit<JournalEntry, "id" | "date" | "userId">) => {
     const newEntry = {
       ...entry,
-      date: serverTimestamp(),
+      id: Math.random().toString(),
+      date: new Date(),
       userId: user?.uid,
-    };
-    await addDoc(journalEntriesRef, newEntry);
-    await setDoc(userRef, { lastPromptDate: new Date().toISOString() }, { merge: true });
+    } as any;
+    setJournalEntries(prev => [...prev, newEntry]);
     setInitialPrompt(""); // Clear prompt after use
   };
 
@@ -75,10 +59,7 @@ export default function HavynAppPage() {
   }, [journalEntries]);
   
   const handleSignOut = async () => {
-    if (auth) {
-      await auth.signOut();
-      router.push('/login');
-    }
+    router.push('/login');
   };
 
   if (userLoading || !user || entriesLoading) {
