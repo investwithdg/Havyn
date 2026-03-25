@@ -7,7 +7,8 @@
 import { collection, addDoc, serverTimestamp, doc, setDoc, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 import type { Firestore } from "firebase/firestore";
 import type { JournalEntry, Mood } from "@/lib/types";
-import { analyzeEntryAction } from "@/app/actions";
+import type { SubscriptionTier } from "@/services/subscription-service";
+import { analyzeEntryAction, deepAnalyzeEntryAction } from "@/app/actions";
 import { getTodayStart, getTomorrowStart } from "@/lib/date-utils";
 
 export interface CheckInData {
@@ -28,7 +29,8 @@ export interface CheckInResult {
 export async function recordDailyCheckIn(
   firestore: Firestore,
   userId: string,
-  checkInData: CheckInData
+  checkInData: CheckInData,
+  tier: SubscriptionTier = "free"
 ): Promise<CheckInResult> {
   try {
     const journalEntriesRef = collection(firestore, "users", userId, "journalEntries");
@@ -43,7 +45,28 @@ export async function recordDailyCheckIn(
     let analysis = null;
     try {
       if (checkInData.entryText && checkInData.entryText.trim().length > 10) {
-        analysis = await analyzeEntryAction({ entryText: checkInData.entryText });
+        if (tier === "premium") {
+          // Premium: use deep analysis with recent entries for context
+          const recentQuery = query(journalEntriesRef, orderBy("date", "desc"), limit(7));
+          const recentSnap = await getDocs(recentQuery);
+          const recentEntries = recentSnap.docs.map((d) => {
+            const data = d.data();
+            const entryDate = data.date?.toDate?.() ?? new Date(data.date);
+            return {
+              mood: data.mood || "Okay",
+              painLevel: data.painLevel ?? 0,
+              date: entryDate.toISOString(),
+              text: data.entryText || undefined,
+            };
+          });
+
+          analysis = await deepAnalyzeEntryAction({
+            entryText: checkInData.entryText,
+            recentEntries,
+          });
+        } else {
+          analysis = await analyzeEntryAction({ entryText: checkInData.entryText });
+        }
       }
     } catch (error) {
       console.warn("Analysis failed, proceeding without it:", error);

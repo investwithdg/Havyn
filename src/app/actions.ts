@@ -8,6 +8,10 @@ import {
   analyzeJournalEntry,
   type AnalyzeJournalEntryInput,
 } from "@/ai/flows/analyze-journal-entry";
+import {
+  deepAnalysis,
+  type DeepAnalysisInput,
+} from "@/ai/flows/deep-analysis";
 
 export async function generatePromptAction(
   input: GenerateInitialJournalPromptInput
@@ -17,4 +21,8 @@ export async function generatePromptAction(
 
 export async function analyzeEntryAction(input: AnalyzeJournalEntryInput) {
   return await analyzeJournalEntry(input);
+}
+
+export async function deepAnalyzeEntryAction(input: DeepAnalysisInput) {
+  return await deepAnalysis(input);
 }

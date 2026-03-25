@@ -5,8 +5,12 @@
  */
 
 import { generatePromptAction } from "@/app/actions";
+import { doc, getDoc, setDoc, increment, serverTimestamp } from "firebase/firestore";
+import type { Firestore } from "firebase/firestore";
+import { format } from "date-fns";
 import type { JournalEntry, Mood } from "@/lib/types";
 import type { GenerateInitialJournalPromptInput } from "@/ai/flows/generate-initial-journal-prompt";
+import type { SubscriptionTier } from "@/services/subscription-service";
 
 export interface PromptContext {
   mood?: Mood;
@@ -128,4 +132,60 @@ export function shouldGenerateNewPrompt(
   const daysDiff = Math.floor((today.getTime() - lastUsed.getTime()) / (1000 * 60 * 60 * 24));
   
   return !!(daysDiff >= 1 || (promptHistory && promptHistory.length > 3));
+}
+
+const FREE_TIER_PROMPT_LIMIT = 1;
+
+function getUsageDocRef(firestore: Firestore, userId: string) {
+  const today = format(new Date(), "yyyy-MM-dd");
+  return doc(firestore, "users", userId, "usage", today);
+}
+
+/**
+ * Gets the number of AI prompts used today
+ */
+export async function getPromptUsageToday(
+  firestore: Firestore,
+  userId: string
+): Promise<number> {
+  try {
+    const usageDoc = await getDoc(getUsageDocRef(firestore, userId));
+    if (!usageDoc.exists()) return 0;
+    return usageDoc.data()?.promptCount ?? 0;
+  } catch (error) {
+    console.error("Error reading prompt usage:", error);
+    return 0;
+  }
+}
+
+/**
+ * Increments the daily prompt usage counter
+ */
+export async function incrementPromptUsage(
+  firestore: Firestore,
+  userId: string
+): Promise<void> {
+  try {
+    await setDoc(
+      getUsageDocRef(firestore, userId),
+      { promptCount: increment(1), lastUsedAt: serverTimestamp() },
+      { merge: true }
+    );
+  } catch (error) {
+    console.error("Error incrementing prompt usage:", error);
+  }
+}
+
+/**
+ * Checks if the user can generate a prompt based on their tier and daily usage
+ */
+export async function canGeneratePrompt(
+  firestore: Firestore,
+  userId: string,
+  tier: SubscriptionTier
+): Promise<boolean> {
+  if (tier === "premium") return true;
+
+  const usedToday = await getPromptUsageToday(firestore, userId);
+  return usedToday < FREE_TIER_PROMPT_LIMIT;
 }

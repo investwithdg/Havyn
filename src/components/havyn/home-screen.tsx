@@ -2,19 +2,35 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Settings, ShieldAlert, X } from "lucide-react";
+import { User, Settings, ShieldAlert, X, Crown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { SettingsScreen } from "@/components/havyn/settings-screen";
+import { FoundingMemberBanner } from "@/components/havyn/founding-member-banner";
+import type { PremiumFeature } from "@/services/subscription-service";
+import type { UseSubscriptionReturn } from "@/hooks/use-subscription";
 
-export function HomeScreen({ 
-  user, 
+export function HomeScreen({
+  user,
   onSignOut,
   encouragement,
-  prompt
-}: { 
-  user: any; 
+  prompt,
+  isPremium = false,
+  triggerPaywall,
+  subscription,
+  onManageSubscription,
+  foundingMemberCount,
+}: {
+  user: any;
   onSignOut: () => void;
   encouragement?: string;
   prompt?: string;
+  isPremium?: boolean;
+  triggerPaywall?: (feature: PremiumFeature) => void;
+  subscription?: UseSubscriptionReturn;
+  onManageSubscription?: () => void;
+  foundingMemberCount?: number;
 }) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [stage, setStage] = useState<"caterpillar" | "chrysalis" | "butterfly">("caterpillar");
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -32,7 +48,15 @@ export function HomeScreen({
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-green-50 to-emerald-100/50 dark:from-zinc-900 dark:to-zinc-800 relative px-6">
-      
+
+      {/* Founding Member Banner */}
+      {!isPremium && triggerPaywall && foundingMemberCount !== undefined && (
+        <FoundingMemberBanner
+          currentCount={foundingMemberCount}
+          onStartTrial={() => triggerPaywall("unlimited_ai_prompts")}
+        />
+      )}
+
       {/* Dynamic Context - Genkit Prompt */}
       {prompt && !menuOpen && (
         <motion.div 
@@ -133,7 +157,15 @@ export function HomeScreen({
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-2xl w-64 flex flex-col gap-4 border border-zinc-100 dark:border-zinc-800 z-50"
           >
             <div className="flex justify-between items-center mb-2">
-              <span className="font-semibold px-2">Menu</span>
+              <div className="flex items-center gap-2 px-2">
+                <span className="font-semibold">Menu</span>
+                {isPremium && (
+                  <Badge variant="secondary" className="bg-[#E09D00]/15 text-[#E09D00] text-[10px] px-1.5 py-0">
+                    <Crown className="w-3 h-3 mr-0.5" />
+                    Premium
+                  </Badge>
+                )}
+              </div>
               <button onClick={() => setMenuOpen(false)} className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800">
                 <X size={16} />
               </button>
@@ -144,7 +176,10 @@ export function HomeScreen({
               <span className="font-medium text-sm">Profile</span>
             </button>
             
-            <button className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
+            <button
+              onClick={() => { setMenuOpen(false); setSettingsOpen(true); }}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+            >
               <Settings size={20} className="text-zinc-500" />
               <span className="font-medium text-sm">Settings</span>
             </button>
@@ -178,6 +213,19 @@ export function HomeScreen({
         </span>
         <span className="flex items-center mx-4 tracking-normal gap-2">← Calendar <span className="mx-2">•</span> Journal →</span>
       </div>
+
+      {/* Settings Sheet */}
+      {subscription && triggerPaywall && (
+        <SettingsScreen
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          user={user}
+          subscription={subscription}
+          onSignOut={onSignOut}
+          onManageSubscription={onManageSubscription || (() => {})}
+          triggerPaywall={triggerPaywall}
+        />
+      )}
     </div>
   );
 }

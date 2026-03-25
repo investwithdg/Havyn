@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Next.js Dev Server",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "dev", "--turbopack"],
+      "port": 9002,
+      "autoPort": true
+    },
+    {
+      "name": "Genkit Dev Server",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "genkit:dev"],
+      "port": 4000
+    }
+  ]
+}
