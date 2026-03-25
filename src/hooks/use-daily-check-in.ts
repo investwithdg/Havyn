@@ -9,16 +9,17 @@ import { useFirestore, useUser } from "@/firebase";
 import { recordDailyCheckIn, hasTodayCheckIn, type CheckInData } from "@/services/daily-check-in";
 import { useToast } from "@/hooks/use-toast";
 import { TOAST_MESSAGES } from "@/lib/ui-utils";
+import type { SubscriptionTier } from "@/services/subscription-service";
 
 export interface UseDailyCheckInReturn {
   // State
   isSubmitting: boolean;
   hasCheckedInToday: boolean | null; // null = loading
-  
+
   // Actions
-  submitCheckIn: (data: CheckInData) => Promise<boolean>;
+  submitCheckIn: (data: CheckInData, tier?: SubscriptionTier) => Promise<boolean>;
   checkTodayStatus: () => Promise<void>;
-  
+
   // Computed
   canCheckIn: boolean;
 }
@@ -43,13 +44,13 @@ export function useDailyCheckIn(): UseDailyCheckInReturn {
     }
   }, [firestore, user]);
 
-  const submitCheckIn = useCallback(async (data: CheckInData): Promise<boolean> => {
+  const submitCheckIn = useCallback(async (data: CheckInData, tier: SubscriptionTier = "free"): Promise<boolean> => {
     if (!firestore || !user || isSubmitting) return false;
 
     setIsSubmitting(true);
-    
+
     try {
-      const result = await recordDailyCheckIn(firestore, user.uid, data);
+      const result = await recordDailyCheckIn(firestore, user.uid, data, tier);
       
       if (result.success) {
         setHasCheckedInToday(true);

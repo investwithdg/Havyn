@@ -18,7 +18,15 @@ const initialMessage: Message = {
   content: "Hello! I'm Havyn, your personal companion. Feel free to share what's on your mind. If you'd like a prompt, just ask!",
 };
 
-export function ChatView({ onNewPrompt }: { onNewPrompt: (prompt: string) => void }) {
+export function ChatView({
+  onNewPrompt,
+  canSendMessage = true,
+  onPaywall,
+}: {
+  onNewPrompt: (prompt: string) => void;
+  canSendMessage?: boolean;
+  onPaywall?: () => void;
+}) {
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [input, setInput] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -26,6 +34,11 @@ export function ChatView({ onNewPrompt }: { onNewPrompt: (prompt: string) => voi
 
   const handleSendMessage = () => {
     if (!input.trim()) return;
+
+    if (!canSendMessage && onPaywall) {
+      onPaywall();
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -107,24 +120,43 @@ export function ChatView({ onNewPrompt }: { onNewPrompt: (prompt: string) => voi
           </div>
         ))}
       </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <Textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Tell me anything..."
-          className="flex-grow resize-none"
-          rows={1}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage();
-            }
-          }}
-        />
-        <Button onClick={handleSendMessage} disabled={isPending || !input.trim()} className="self-end">
-          <Send size={18} />
-        </Button>
-      </div>
+      {!canSendMessage ? (
+        <div className="shrink-0 text-center py-3 px-4 bg-muted/50 rounded-xl">
+          <p className="text-sm text-muted-foreground mb-2">
+            You&apos;ve used your free chat for today
+          </p>
+          {onPaywall && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs border-[#E09D00]/40 text-[#E09D00] hover:bg-[#E09D00]/10"
+              onClick={onPaywall}
+            >
+              <Sparkles className="w-3 h-3 mr-1" />
+              Unlock Unlimited Chat
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 shrink-0">
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Tell me anything..."
+            className="flex-grow resize-none"
+            rows={1}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
+          />
+          <Button onClick={handleSendMessage} disabled={isPending || !input.trim()} className="self-end">
+            <Send size={18} />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
