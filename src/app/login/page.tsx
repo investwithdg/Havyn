@@ -8,6 +8,7 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
 } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +60,13 @@ export default function LoginPage() {
     startTransition(async () => {
       try {
         const provider = new GoogleAuthProvider();
+        const prefersRedirect = window.matchMedia("(pointer: coarse)").matches;
+
+        if (prefersRedirect) {
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+
         await signInWithPopup(auth, provider);
         router.push("/");
       } catch (error: any) {
@@ -80,8 +88,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
-        <div className="mb-8">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="mb-6 sm:mb-8">
             <Logo />
         </div>
       <Tabs defaultValue="login" className="w-full max-w-sm">

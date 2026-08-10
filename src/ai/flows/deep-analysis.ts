@@ -1,10 +1,7 @@
-// src/ai/flows/deep-analysis.ts
 'use server';
-
 /**
  * Deep Analysis Flow (Premium)
- * Provides richer therapeutic analysis across multiple entries
- * with pattern detection, recommendations, and risk flagging.
+ * Provides postpartum-aware pattern detection, recommendations, and risk flagging.
  */
 
 import { ai } from '@/ai/genkit';
@@ -24,7 +21,7 @@ const DeepAnalysisInputSchema = z.object({
       })
     )
     .optional()
-    .describe('Recent journal entries for pattern analysis.'),
+    .describe('Recent journal entries for postpartum pattern analysis.'),
 });
 
 export type DeepAnalysisInput = z.infer<typeof DeepAnalysisInputSchema>;
@@ -32,7 +29,7 @@ export type DeepAnalysisInput = z.infer<typeof DeepAnalysisInputSchema>;
 const DeepAnalysisOutputSchema = z.object({
   themes: z
     .array(z.string())
-    .describe('Recurring themes identified in the journal entry.'),
+    .describe('Recurring postpartum themes identified in the journal entry.'),
   emotions: z
     .array(z.string())
     .describe('Emotions expressed in the journal entry.'),
@@ -40,12 +37,12 @@ const DeepAnalysisOutputSchema = z.object({
   patterns: z
     .array(z.string())
     .describe(
-      'Patterns detected across recent entries, e.g. recurring topics, mood shifts.'
+      'Patterns detected across recent entries, e.g. sleep disruption, feeding stress, isolation, recovery pain, or mood shifts.'
     ),
   recommendations: z
     .array(z.string())
     .describe(
-      'Actionable wellness recommendations based on the analysis.'
+      'Specific, low-burden postpartum support recommendations. These must not diagnose or prescribe treatment.'
     ),
   moodTrend: z
     .enum(['improving', 'stable', 'declining'])
@@ -53,7 +50,7 @@ const DeepAnalysisOutputSchema = z.object({
   riskFlags: z
     .array(z.string())
     .describe(
-      'Concerning patterns that may warrant attention, e.g. persistent high pain or declining mood.'
+      'Concerning postpartum patterns that may warrant immediate support or care-team follow-up.'
     ),
 });
 
@@ -69,15 +66,21 @@ const prompt = ai.definePrompt({
   name: 'deepAnalysisPrompt',
   input: { schema: DeepAnalysisInputSchema },
   output: { schema: DeepAnalysisOutputSchema },
-  prompt: `You are a compassionate wellness analyst specializing in women's health and emotional wellbeing. You provide thoughtful, therapeutic analysis that helps users understand their patterns and take positive action.
+  prompt: `You are Havyn, an AI postpartum companion for the first 12 weeks after birth. You help the user see patterns with compassion and decide what support to ask for.
 
-Analyze the current journal entry and any recent entries provided. Your analysis should be warm, supportive, and actionable.
+Clinical boundaries:
+- Do not diagnose postpartum depression, anxiety, psychosis, PTSD, or any medical condition.
+- Do not prescribe treatment, medication, supplements, or medical instructions.
+- If there are signals of self-harm, harm to others, hallucinations, paranoia, feeling unsafe, or loss of control, riskFlags must include "urgent human support" and recommendations must prioritize contacting emergency support, a trusted person, or the user's care team.
+- Use support-oriented language: "support level", "signals to discuss", "care-team follow-up", and "human support". Avoid clinical scoring language such as "risk score" or "screen positive".
+- Physical recovery concerns, severe pain, heavy bleeding language, fever language, or feeling physically unsafe should be framed as reasons to contact a clinician promptly.
+- Recommendations should be small, practical, and low burden.
 
 ## Current Journal Entry
 {{{entryText}}}
 
 {{#if recentEntries}}
-## Recent Entries (for context and pattern detection)
+## Recent Entries
 {{#each recentEntries}}
 - Date: {{this.date}} | Mood: {{this.mood}} | Pain: {{this.painLevel}}/10{{#if this.text}} | "{{this.text}}"{{/if}}
 {{/each}}
@@ -85,15 +88,15 @@ Analyze the current journal entry and any recent entries provided. Your analysis
 
 ## Instructions
 
-1. **Themes**: Identify 2-4 recurring themes from the current entry and recent history.
-2. **Emotions**: List the emotions expressed (both explicit and implicit).
-3. **Summary**: Write a compassionate 2-3 sentence summary of what the user is experiencing.
-4. **Patterns**: Look across recent entries for recurring topics, cyclical mood changes, pain correlations with mood, or behavioral patterns. If no recent entries, note what you observe in this single entry.
-5. **Recommendations**: Provide 2-3 specific, actionable wellness recommendations. Be concrete (e.g., "Try a 10-minute walk after lunch" not "exercise more"). Tailor to what the entry reveals.
-6. **Mood Trend**: Based on recent entries, classify the overall trend as "improving", "stable", or "declining". If only one entry, base it on the tone.
-7. **Risk Flags**: Flag any concerning patterns that may warrant professional attention, such as: persistent high pain levels (7+), sustained declining mood, mentions of hopelessness, social isolation, or sleep disruption lasting more than a week. Only flag genuine concerns — do not over-flag.
+1. Themes: Identify 2-4 postpartum-relevant themes.
+2. Emotions: List explicit and implicit emotions.
+3. Summary: Write a compassionate 2-3 sentence summary without diagnosis.
+4. Patterns: Look for recurring postpartum signals such as sleep deprivation, feeding pressure, physical recovery strain, isolation, anxiety spikes, bonding distress, lack of support, identity shift, or pain/mood correlation.
+5. Recommendations: Provide 2-3 concrete next steps. Examples: ask a support person for a protected rest block, write one question for the next OB/midwife visit, text a trusted person, simplify feeding support, or call the care team for physical concerns. Do not tell the user to simply "self-care more".
+6. Mood trend: Classify as improving, stable, or declining based on recent entries.
+7. Risk flags: Include only genuine concerns. Use phrases such as "urgent human support", "care-team follow-up", "high distress without support", "sleep disruption", "severe recovery concern", or "intrusive thoughts" when supported by the text.
 
-Output format: A JSON object matching the schema.`,
+Return a JSON object matching the schema.`,
 });
 
 const deepAnalysisFlow = ai.defineFlow(

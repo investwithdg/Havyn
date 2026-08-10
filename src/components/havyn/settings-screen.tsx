@@ -42,7 +42,7 @@ export function SettingsScreen({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+      <SheetContent side="right" className="w-full overflow-y-auto px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-md" data-scrollable="true">
         <SheetHeader>
           <SheetTitle>Settings</SheetTitle>
         </SheetHeader>
@@ -57,7 +57,7 @@ export function SettingsScreen({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-sm">Current Plan</span>
                 <Badge
                   variant={subscription.isPremium ? "default" : "secondary"}
@@ -72,7 +72,7 @@ export function SettingsScreen({
               </div>
 
               {subscription.isPremium && subscription.subscription.currentPeriodEnd && (
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4">
                   <span className="text-sm text-muted-foreground">
                     Next billing date
                   </span>
@@ -113,19 +113,19 @@ export function SettingsScreen({
             </CardHeader>
             <CardContent className="space-y-3">
               {user.displayName && (
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4">
                   <span className="text-sm text-muted-foreground">Name</span>
                   <span className="text-sm">{user.displayName}</span>
                 </div>
               )}
               {user.email && (
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4">
                   <span className="text-sm text-muted-foreground">Email</span>
-                  <span className="text-sm truncate ml-4">{user.email}</span>
+                  <span className="ml-4 min-w-0 truncate text-sm">{user.email}</span>
                 </div>
               )}
               {memberSince && (
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4">
                   <span className="text-sm text-muted-foreground">
                     Member since
                   </span>

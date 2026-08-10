@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 
 // Firebase & Types
 import { useAuth, useUser, useFirestore, useCollection, useDoc } from "@/firebase";
-import { collection, doc } from "firebase/firestore";
-import type { JournalEntry, Mood } from "@/lib/types";
+import { collection, doc, setDoc } from "firebase/firestore";
+import type { JournalEntry, Mood, PostpartumProfile, PostpartumSignals, RiskAssessment } from "@/lib/types";
+import { assessPostpartumRisk } from "@/lib/postpartum-risk";
 
 // Swipe Navigation
 import { SwipeContainer } from "@/components/havyn/swipe-container";
@@ -25,6 +26,9 @@ import { useReflectionPrompts } from "@/hooks/use-reflection-prompts";
 import { useSubscription } from "@/hooks/use-subscription";
 import { canGeneratePrompt, incrementPromptUsage } from "@/services/prompt-service";
 import { Paywall } from "@/components/havyn/paywall";
+import { PostpartumOnboarding } from "@/components/havyn/postpartum-onboarding";
+import { InstallAppPrompt } from "@/components/havyn/install-app-prompt";
+import { ServiceWorkerRegistration } from "@/components/havyn/service-worker-registration";
 
 export default function HavynAppPage() {
   const { user, loading: userLoading } = useUser();
@@ -51,6 +55,7 @@ export default function HavynAppPage() {
   const { data: userProfile, loading: profileLoading } = useDoc(userRef);
   const { data: journalEntries, loading: entriesLoading } = useCollection<JournalEntry>(journalEntriesRef);
   const { data: appStats } = useDoc(appStatsRef);
+  const postpartumProfile = (userProfile?.postpartumProfile ?? null) as PostpartumProfile | null;
 
   // Subscription
   const sub = useSubscription(userProfile, profileLoading);
@@ -66,6 +71,12 @@ export default function HavynAppPage() {
   // State to bridge Check In and Journal
   const [pendingMood, setPendingMood] = useState<Mood>("Okay");
   const [pendingPain, setPendingPain] = useState<number>(0);
+  const [pendingPostpartum, setPendingPostpartum] = useState<PostpartumSignals | null>(null);
+  const [activeRisk, setActiveRisk] = useState<RiskAssessment | null>(null);
+  const [supportSheetOpen, setSupportSheetOpen] = useState(false);
+  const [urgentSupportOpen, setUrgentSupportOpen] = useState(false);
+  const [profileSheetOpen, setProfileSheetOpen] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   // Auth redirect
   useEffect(() => {
@@ -79,6 +90,25 @@ export default function HavynAppPage() {
       dailyCheckIn.checkTodayStatus();
     }
   }, [user, firestore]);
+
+  useEffect(() => {
+    if (!profileLoading && user && !postpartumProfile?.consent?.aiSupport) {
+      setProfileSheetOpen(true);
+    }
+  }, [profileLoading, user, postpartumProfile?.consent?.aiSupport]);
+
+  const handleSavePostpartumProfile = async (profile: PostpartumProfile) => {
+    if (!userRef) return;
+
+    setIsSavingProfile(true);
+    try {
+      await setDoc(userRef, { postpartumProfile: profile }, { merge: true });
+      setProfileSheetOpen(false);
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
 
   const handleSignOut = async () => {
     if (auth) {
@@ -102,24 +132,30 @@ export default function HavynAppPage() {
     }
   };
 
-  const handleCheckInComplete = async (mood: string, painLevel: number) => {
-    const formattedMood = (mood.charAt(0).toUpperCase() + mood.slice(1)) as Mood;
+  const handleCheckInComplete = async (mood: Mood, painLevel: number, postpartum: PostpartumSignals) => {
+    const formattedMood = mood;
     setPendingMood(formattedMood);
     setPendingPain(painLevel);
+    setPendingPostpartum(postpartum);
+    const risk = assessPostpartumRisk(postpartum);
+    setActiveRisk(risk);
+    setUrgentSupportOpen(risk.level === "urgent");
+    setSupportSheetOpen(risk.escalationRecommended && risk.level !== "urgent");
     
     // We can save a placeholder check-in if user doesn't journal, or wait for the journal.
     // For this flow, we pre-log the check-in to satisfy "hasCheckedInToday" and then the journal will log *another* comprehensive entry, or this is sufficient.
     await dailyCheckIn.submitCheckIn({
       mood: formattedMood,
       painLevel,
-      entryText: ""
+      entryText: "",
+      postpartum
     }, sub.tier);
     
     // Generate prompt for the journal (gated for free users)
     if (firestore && user) {
       const canGenerate = await canGeneratePrompt(firestore, user.uid, sub.tier);
       if (canGenerate) {
-        reflectionPrompts.generateNewPrompt();
+        reflectionPrompts.generateNewPrompt({ postpartum, risk, profile: postpartumProfile ?? undefined });
         await incrementPromptUsage(firestore, user.uid);
       } else {
         // Don't interrupt — give them a fallback prompt so they can still journal
@@ -133,7 +169,8 @@ export default function HavynAppPage() {
     await dailyCheckIn.submitCheckIn({
       mood: pendingMood,
       painLevel: pendingPain,
-      entryText: text
+      entryText: text,
+      ...(pendingPostpartum ? { postpartum: pendingPostpartum } : {})
     }, sub.tier);
     reflectionPrompts.clearCurrentPrompt();
   };
@@ -157,10 +194,14 @@ export default function HavynAppPage() {
             onSignOut={handleSignOut}
             encouragement={dynamicCTA.encouragement}
             prompt={reflectionPrompts.currentPrompt}
+            journalEntries={journalEntries || []}
+            postpartumProfile={postpartumProfile}
             isPremium={sub.isPremium}
             triggerPaywall={sub.triggerPaywall}
             subscription={sub}
             onManageSubscription={handleManageSubscription}
+            onOpenProfile={() => setProfileSheetOpen(true)}
+            onOpenSupport={() => setSupportSheetOpen(true)}
             foundingMemberCount={appStats?.foundingMembersCount ?? 0}
           />
         }
@@ -169,9 +210,17 @@ export default function HavynAppPage() {
             prompt={reflectionPrompts.currentPrompt}
             isSubmitting={dailyCheckIn.isSubmitting}
             onSubmit={handleJournalSubmit}
+            companionContext={{
+              mood: pendingMood,
+              painLevel: pendingPain,
+              postpartum: pendingPostpartum,
+              risk: activeRisk,
+              profile: postpartumProfile,
+            }}
+            onOpenSupport={() => setSupportSheetOpen(true)}
           />
         }
-        journalSidebar={<JournalSidebar entries={journalEntries || []} />}
+        journalSidebar={<JournalSidebar entries={journalEntries || []} postpartumProfile={postpartumProfile} />}
         calendarScreen={
           <CalendarView
             entries={journalEntries || []}
@@ -185,7 +234,47 @@ export default function HavynAppPage() {
             isSubmitting={dailyCheckIn.isSubmitting}
           />
         }
-        escalateScreen={<EscalateScreen />}
+        escalateScreen={
+          <EscalateScreen
+            risk={activeRisk}
+            signals={pendingPostpartum}
+            mood={pendingMood}
+            painLevel={pendingPain}
+            profile={postpartumProfile}
+          />
+        }
+      />
+      {supportSheetOpen && (
+        <EscalateScreen
+          variant="sheet"
+          risk={activeRisk}
+          signals={pendingPostpartum}
+          mood={pendingMood}
+          painLevel={pendingPain}
+          profile={postpartumProfile}
+          onDismiss={() => setSupportSheetOpen(false)}
+        />
+      )}
+      {urgentSupportOpen && (
+        <EscalateScreen
+          variant="urgent"
+          risk={activeRisk}
+          signals={pendingPostpartum}
+          mood={pendingMood}
+          painLevel={pendingPain}
+          profile={postpartumProfile}
+          onDismiss={() => setUrgentSupportOpen(false)}
+        />
+      )}
+      <ServiceWorkerRegistration />
+      {!profileSheetOpen && !supportSheetOpen && !urgentSupportOpen && <InstallAppPrompt />}
+      <PostpartumOnboarding
+        open={profileSheetOpen}
+        initialProfile={postpartumProfile}
+        isSaving={isSavingProfile}
+        onSave={handleSavePostpartumProfile}
+        onClose={() => setProfileSheetOpen(false)}
+        mode={postpartumProfile?.consent?.aiSupport ? "edit" : "onboarding"}
       />
       <Paywall
         feature={sub.paywallFeature}

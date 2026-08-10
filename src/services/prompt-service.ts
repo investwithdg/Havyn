@@ -8,7 +8,7 @@ import { generatePromptAction } from "@/app/actions";
 import { doc, getDoc, setDoc, increment, serverTimestamp } from "firebase/firestore";
 import type { Firestore } from "firebase/firestore";
 import { format } from "date-fns";
-import type { JournalEntry, Mood } from "@/lib/types";
+import type { JournalEntry, Mood, PostpartumProfile, PostpartumSignals, RiskAssessment } from "@/lib/types";
 import type { GenerateInitialJournalPromptInput } from "@/ai/flows/generate-initial-journal-prompt";
 import type { SubscriptionTier } from "@/services/subscription-service";
 
@@ -17,6 +17,9 @@ export interface PromptContext {
   recentThoughts?: string;
   recentEntries?: JournalEntry[];
   promptHistory?: string[];
+  postpartum?: PostpartumSignals;
+  profile?: PostpartumProfile;
+  risk?: RiskAssessment;
 }
 
 export interface PromptResult {
@@ -59,6 +62,23 @@ function buildPromptInput(context: PromptContext): GenerateInitialJournalPromptI
     mood,
     recentThoughts: context.recentThoughts,
     promptType: "check-in",
+    postpartumWeek: context.profile?.postpartumWeek,
+    deliveryType: context.profile?.deliveryType,
+    feedingMode: context.profile?.feedingMode,
+    supportSystem: context.profile?.supportSystem?.join(", "),
+    careTeam: context.profile?.careTeam,
+    anxietyLevel: context.postpartum?.anxietyLevel,
+    overwhelmLevel: context.postpartum?.overwhelmLevel,
+    sleepHours: context.postpartum?.sleepHours,
+    feedingStress: context.postpartum?.feedingStress,
+    recoveryConcern: context.postpartum?.recoveryConcern,
+    supportToday: context.postpartum?.supportToday,
+    riskLevel: context.risk?.level,
+    riskFlags: context.risk?.flags?.join(", "),
+    unwantedScaryThoughts: context.postpartum?.unwantedScaryThoughts ?? context.postpartum?.intrusiveThoughts,
+    thoughtsFeelUncontrollable: context.postpartum?.thoughtsFeelUncontrollable,
+    harmConcern: context.postpartum?.harmConcern,
+    notFeelingSafe: context.postpartum?.notFeelingSafe,
   };
 }
 
@@ -77,14 +97,12 @@ function inferMoodFromRecent(recentEntries?: JournalEntry[]): Mood | null {
  */
 function getFallbackPrompt(context: PromptContext): string {
   const fallbackPrompts = [
-    "What's one thing you're grateful for today?",
-    "How are you feeling right now, and what might be contributing to that feeling?",
-    "What's been on your mind lately?",
-    "Describe a moment from today that stood out to you.",
-    "What would you like to let go of today?",
-    "What's something you learned about yourself recently?",
-    "How would you describe your energy level today?",
-    "What's one small thing that brought you joy today?",
+    "What part of the last 24 hours felt heaviest, and what support would make the next hour easier?",
+    "What is one thing your body or mind seems to be asking for today?",
+    "Where did you feel most alone today, and who could you let in just a little?",
+    "What felt tender about caring for yourself or your baby today?",
+    "What is one question you may want to bring to your OB, midwife, therapist, doula, or support person?",
+    "What would help you feel a little safer or more held tonight?",
   ];
 
   // Avoid recent prompts if we have history
@@ -105,10 +123,10 @@ function getFallbackPrompt(context: PromptContext): string {
  */
 export function getQuickCheckInPrompt(): string {
   const quickPrompts = [
-    "How are you feeling right now?",
-    "What's on your mind today?",
-    "Take a moment to check in with yourself.",
-    "What would be helpful to explore today?",
+    "What do you need most in this postpartum moment?",
+    "What has your body been trying to tell you today?",
+    "What would make the next hour feel more supported?",
+    "What is one thing you want someone to understand about today?",
   ];
 
   return quickPrompts[Math.floor(Math.random() * quickPrompts.length)];

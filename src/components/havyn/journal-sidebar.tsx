@@ -2,14 +2,25 @@
 
 import React from "react";
 import { format } from "date-fns";
-import type { JournalEntry } from "@/lib/types";
+import type { JournalEntry, PostpartumProfile } from "@/lib/types";
+import { WeeklySummaryCard } from "@/components/havyn/weekly-summary-card";
 
-export function JournalSidebar({ entries = [] }: { entries?: JournalEntry[] }) {
+export function JournalSidebar({
+  entries = [],
+  postpartumProfile,
+}: {
+  entries?: JournalEntry[];
+  postpartumProfile?: PostpartumProfile | null;
+}) {
   return (
-    <div className="w-full h-full bg-[#3d3d3d] text-[#e8e6e3] pt-16 px-6 overflow-y-auto relative">
+    <div className="relative h-full w-full overflow-y-auto bg-[#3d3d3d] px-5 pt-[max(4rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] text-[#e8e6e3]" data-scrollable="true">
       {/* Wayfinding */}
       <div className="absolute top-1/2 -left-6 -translate-y-1/2 opacity-30 text-xs font-medium uppercase tracking-widest text-zinc-400 -rotate-90 origin-left">
          <span className="flex items-center gap-1">Swipe Journal</span>
+      </div>
+
+      <div className="mb-5">
+        <WeeklySummaryCard entries={entries} postpartumProfile={postpartumProfile} />
       </div>
 
       <h2 className="text-xl font-medium mb-6">Past Entries</h2>

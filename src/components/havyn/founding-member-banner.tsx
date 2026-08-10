@@ -41,7 +41,7 @@ export function FoundingMemberBanner({
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        className="absolute top-4 left-4 right-4 z-30 rounded-2xl border border-[#E09D00]/30 bg-[#E09D00]/10 dark:bg-[#E09D00]/5 p-4 shadow-lg backdrop-blur-sm"
+        className="absolute left-4 right-4 top-[max(1rem,env(safe-area-inset-top))] z-30 rounded-2xl border border-[#E09D00]/30 bg-[#E09D00]/10 dark:bg-[#E09D00]/5 p-4 shadow-lg backdrop-blur-sm"
       >
         <button
           onClick={handleDismiss}

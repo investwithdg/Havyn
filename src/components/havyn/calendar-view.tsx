@@ -107,17 +107,17 @@ export function CalendarView({
   triggerPaywall?: (feature: PremiumFeature) => void;
 }) {
   return (
-    <div className="p-4 h-full relative flex flex-col justify-center">
+    <div className="relative flex h-full flex-col overflow-y-auto px-4 py-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]" data-scrollable="true">
       {/* Wayfinding */}
       <div className="absolute top-1/2 -right-6 -translate-y-1/2 opacity-30 text-xs font-medium uppercase tracking-widest text-zinc-400 rotate-90 origin-right">
          <span className="flex items-center gap-1">Swipe Home</span>
       </div>
-      <Card>
+      <Card className="shrink-0">
         <CardHeader>
           <CardTitle className="font-headline text-primary">Your Journey</CardTitle>
           <CardDescription>Visualize your mood and pain trends over time.</CardDescription>
         </CardHeader>
-        <CardContent className="flex justify-center">
+        <CardContent className="flex justify-center overflow-x-auto">
           <DayPicker
             mode="single"
             showOutsideDays
@@ -158,7 +158,7 @@ export function CalendarView({
       </Card>
 
       {/* Trends Section */}
-      <Card className="mt-4">
+      <Card className="mt-4 shrink-0">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />

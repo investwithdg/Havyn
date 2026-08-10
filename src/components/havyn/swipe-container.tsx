@@ -41,10 +41,20 @@ export function SwipeContainer({
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
-    setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    const getViewportSize = () => ({
+      width: window.visualViewport?.width ?? window.innerWidth,
+      height: window.visualViewport?.height ?? window.innerHeight,
+    });
+    const handleResize = () => setWindowSize(getViewportSize());
+
+    handleResize();
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.visualViewport?.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.visualViewport?.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   const handleDragEnd = (event: any, info: PanInfo) => {
@@ -82,7 +92,7 @@ export function SwipeContainer({
   if (!windowSize.width) return null;
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-background touch-none">
+    <div className="fixed inset-0 overflow-hidden bg-background touch-pan-y select-none">
       <motion.div
         className="w-full h-full relative"
         drag

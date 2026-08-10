@@ -6,7 +6,8 @@
 
 import { collection, addDoc, serverTimestamp, doc, setDoc, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 import type { Firestore } from "firebase/firestore";
-import type { JournalEntry, Mood } from "@/lib/types";
+import type { JournalEntry, Mood, PostpartumSignals } from "@/lib/types";
+import { assessPostpartumRisk } from "@/lib/postpartum-risk";
 import type { SubscriptionTier } from "@/services/subscription-service";
 import { analyzeEntryAction, deepAnalyzeEntryAction } from "@/app/actions";
 import { getTodayStart, getTomorrowStart } from "@/lib/date-utils";
@@ -15,6 +16,7 @@ export interface CheckInData {
   mood: Mood;
   painLevel: number;
   entryText: string;
+  postpartum?: PostpartumSignals;
 }
 
 export interface CheckInResult {
@@ -41,6 +43,8 @@ export async function recordDailyCheckIn(
     const tomorrow = getTomorrowStart();
     const todayQuery = query(journalEntriesRef, where("date", ">=", today), where("date", "<", tomorrow), limit(1));
     const snapshot = await getDocs(todayQuery);
+
+    const risk = checkInData.postpartum ? assessPostpartumRisk(checkInData.postpartum) : null;
 
     let analysis = null;
     try {
@@ -74,6 +78,7 @@ export async function recordDailyCheckIn(
 
     const entryData = {
       ...checkInData,
+      ...(risk ? { risk } : {}),
       userId,
       ...(analysis ? { analysis } : {})
     };
@@ -89,7 +94,9 @@ export async function recordDailyCheckIn(
         ...existingData,
         mood: checkInData.mood || existingData.mood,
         painLevel: checkInData.painLevel !== undefined ? checkInData.painLevel : existingData.painLevel,
-        entryText: checkInData.entryText || existingData.entryText, // Don't wipe text if empty
+        entryText: checkInData.entryText || existingData.entryText, // Do not wipe text if empty
+        ...(checkInData.postpartum ? { postpartum: checkInData.postpartum } : {}),
+        ...(risk ? { risk } : {}),
         ...((analysis || existingData.analysis) ? { analysis: analysis || existingData.analysis } : {})
       };
       
