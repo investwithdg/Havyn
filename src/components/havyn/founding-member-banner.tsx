@@ -41,18 +41,18 @@ export function FoundingMemberBanner({
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        className="absolute left-4 right-4 top-[max(1rem,env(safe-area-inset-top))] z-30 rounded-2xl border border-[#E09D00]/30 bg-[#E09D00]/10 dark:bg-[#E09D00]/5 p-4 shadow-lg backdrop-blur-sm"
+        className="absolute left-4 right-4 top-[max(1rem,env(safe-area-inset-top))] z-30 rounded-2xl border border-accent/30 bg-accent/10 dark:bg-accent/5 p-4 shadow-lg backdrop-blur-sm"
       >
         <button
           onClick={handleDismiss}
           className="absolute top-2 right-2 p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
         >
-          <X size={14} className="text-[#E09D00]/60" />
+          <X size={14} className="text-accent/60" />
         </button>
 
         <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-full bg-[#E09D00]/20 flex items-center justify-center shrink-0 mt-0.5">
-            <Crown className="w-4 h-4 text-[#E09D00]" />
+          <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0 mt-0.5">
+            <Crown className="w-4 h-4 text-accent" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-foreground">
@@ -71,7 +71,7 @@ export function FoundingMemberBanner({
 
             <Button
               size="sm"
-              className="mt-2 h-7 text-xs bg-[#E09D00] hover:bg-[#E09D00]/90 text-white"
+              className="mt-2 h-7 text-xs bg-accent hover:bg-accent/90 text-white"
               onClick={onStartTrial}
             >
               Claim Your Spot

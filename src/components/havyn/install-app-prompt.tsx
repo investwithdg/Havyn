@@ -71,23 +71,23 @@ export function InstallAppPrompt() {
   };
 
   return (
-    <div className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[70] mx-auto max-w-sm rounded-[1.5rem] border border-emerald-100 bg-white p-4 shadow-2xl dark:border-emerald-900/30 dark:bg-zinc-900">
+    <div className="fixed inset-x-3 bottom-[max(5.5rem,calc(env(safe-area-inset-bottom)+4.5rem))] z-[70] mx-auto max-w-sm rounded-[1.5rem] border border-primary/15 bg-card p-4 shadow-2xl">
       <div className="flex gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
           <Smartphone size={20} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">Add Havyn to your phone</h2>
-              <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+              <h2 className="text-sm font-semibold text-foreground">Add Havyn to your phone</h2>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                 Open Havyn from your Home Screen like an app for faster check-ins.
               </p>
             </div>
             <button
               type="button"
               onClick={handleDismiss}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
               aria-label="Dismiss install prompt"
             >
               <X size={15} />
@@ -98,13 +98,13 @@ export function InstallAppPrompt() {
             <button
               type="button"
               onClick={handleInstall}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 py-3 text-sm font-semibold text-white"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-semibold text-primary-foreground"
             >
               <Download size={16} />
               <span>Install Havyn</span>
             </button>
           ) : (
-            <div className="mt-3 rounded-2xl bg-emerald-50 p-3 text-xs leading-relaxed text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
+            <div className="mt-3 rounded-2xl bg-primary/8 p-3 text-xs leading-relaxed text-foreground/80">
               <div className="flex items-start gap-2">
                 <Share className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>Tap Share in Safari, then choose Add to Home Screen.</span>
@@ -115,7 +115,7 @@ export function InstallAppPrompt() {
           <button
             type="button"
             onClick={handleDismiss}
-            className="mt-2 flex w-full items-center justify-center gap-2 py-2 text-xs font-medium text-zinc-500 dark:text-zinc-400"
+            className="mt-2 flex w-full items-center justify-center gap-2 py-2 text-xs font-medium text-muted-foreground"
           >
             <Check size={14} />
             <span>Not now</span>

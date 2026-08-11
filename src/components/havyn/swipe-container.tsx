@@ -1,51 +1,30 @@
 import React, { useState, useEffect } from "react";
 import { motion, PanInfo } from "framer-motion";
 
-type ScreenKey = "home" | "journal" | "journal-sidebar" | "calendar" | "check-in" | "escalate";
+export type ScreenKey = "home" | "journal" | "journal-sidebar" | "calendar";
 
-interface Coordinate {
-  x: number;
-  y: number;
-}
-
-const SCREENS: Record<ScreenKey, Coordinate> = {
-  "calendar": { x: -1, y: 0 },
-  "home": { x: 0, y: 0 },
-  "journal": { x: 1, y: 0 },
-  "journal-sidebar": { x: 2, y: 0 },
-  "check-in": { x: 0, y: 1 }, // Above Home
-  "escalate": { x: 0, y: -1 }, // Below Home
-};
-
-const COORDINATE_TO_SCREEN: Record<string, ScreenKey> = Object.entries(SCREENS).reduce(
-  (acc, [key, coord]) => ({ ...acc, [`${coord.x},${coord.y}`]: key as ScreenKey }),
-  {}
-);
+const ORDER: ScreenKey[] = ["calendar", "home", "journal", "journal-sidebar"];
 
 export function SwipeContainer({
+  activeScreen,
+  onScreenChange,
   homeScreen,
   journalScreen,
   journalSidebar,
   calendarScreen,
-  checkInScreen,
-  escalateScreen,
 }: {
+  activeScreen: ScreenKey;
+  onScreenChange: (screen: ScreenKey) => void;
   homeScreen: React.ReactNode;
   journalScreen: React.ReactNode;
   journalSidebar: React.ReactNode;
   calendarScreen: React.ReactNode;
-  checkInScreen: React.ReactNode;
-  escalateScreen: React.ReactNode;
 }) {
-  const [activeScreen, setActiveScreen] = useState<ScreenKey>("home");
-  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+  const [windowWidth, setWindowWidth] = useState(0);
 
   useEffect(() => {
-    const getViewportSize = () => ({
-      width: window.visualViewport?.width ?? window.innerWidth,
-      height: window.visualViewport?.height ?? window.innerHeight,
-    });
-    const handleResize = () => setWindowSize(getViewportSize());
+    const getWidth = () => window.visualViewport?.width ?? window.innerWidth;
+    const handleResize = () => setWindowWidth(getWidth());
 
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -58,72 +37,51 @@ export function SwipeContainer({
   }, []);
 
   const handleDragEnd = (event: any, info: PanInfo) => {
-    const threshold = 50; // minimum drag distance
-    const { offset, velocity } = info;
-    const currentCoord = SCREENS[activeScreen];
+    const threshold = 50;
+    const currentIndex = ORDER.indexOf(activeScreen);
+    let newIndex = currentIndex;
 
-    let newX = currentCoord.x;
-    let newY = currentCoord.y;
-
-    if (Math.abs(offset.x) > Math.abs(offset.y)) {
-      // Horizontal swipe
-      if (offset.x < -threshold) {
-        newX += 1; // Swiped left -> move view right
-      } else if (offset.x > threshold) {
-        newX -= 1; // Swiped right -> move view left
-      }
-    } else {
-      // Vertical swipe
-      if (offset.y > threshold) {
-        newY += 1; // Swiped down -> move view up (to check-in)
-      } else if (offset.y < -threshold) {
-        newY -= 1; // Swiped up -> move view down (to escalate)
-      }
+    if (info.offset.x < -threshold) {
+      newIndex = Math.min(currentIndex + 1, ORDER.length - 1);
+    } else if (info.offset.x > threshold) {
+      newIndex = Math.max(currentIndex - 1, 0);
     }
 
-    const newScreen = COORDINATE_TO_SCREEN[`${newX},${newY}`];
-    if (newScreen) {
-      setActiveScreen(newScreen);
+    if (newIndex !== currentIndex) {
+      onScreenChange(ORDER[newIndex]);
     }
   };
 
-  const activeCoord = SCREENS[activeScreen];
+  const activeIndex = ORDER.indexOf(activeScreen);
 
-  if (!windowSize.width) return null;
+  if (!windowWidth) return null;
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-background touch-pan-y select-none">
+    <div className="fixed inset-0 overflow-hidden bg-background select-none">
       <motion.div
-        className="w-full h-full relative"
-        drag
-        dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+        className="h-full relative"
+        style={{ width: windowWidth * ORDER.length }}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.2}
         onDragEnd={handleDragEnd}
-        animate={{
-          x: -activeCoord.x * windowSize.width,
-          y: activeCoord.y * windowSize.height,
-        }}
+        animate={{ x: -activeIndex * windowWidth }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        dragDirectionLock
       >
-        {/* Render all screens in absolute positions relative to this container */}
-        <div className="absolute w-screen h-[100dvh]" style={{ left: 0, top: 0 }}>
-          {homeScreen}
-        </div>
-        <div className="absolute w-screen h-[100dvh]" style={{ left: "-100vw", top: 0 }}>
+        {/* Render all screens side by side; horizontal swipe/drag is the only
+            gesture handled here so it never fights a screen's own vertical
+            scroll content. */}
+        <div className="absolute h-full" style={{ left: 0, top: 0, width: windowWidth }}>
           {calendarScreen}
         </div>
-        <div className="absolute w-screen h-[100dvh]" style={{ left: "100vw", top: 0 }}>
+        <div className="absolute h-full" style={{ left: windowWidth, top: 0, width: windowWidth }}>
+          {homeScreen}
+        </div>
+        <div className="absolute h-full" style={{ left: windowWidth * 2, top: 0, width: windowWidth }}>
           {journalScreen}
         </div>
-        <div className="absolute w-screen h-[100dvh]" style={{ left: "200vw", top: 0 }}>
+        <div className="absolute h-full" style={{ left: windowWidth * 3, top: 0, width: windowWidth }}>
           {journalSidebar}
-        </div>
-        <div className="absolute w-screen h-[100dvh]" style={{ left: 0, top: "-100dvh" }}>
-          {checkInScreen}
-        </div>
-        <div className="absolute w-screen h-[100dvh]" style={{ left: 0, top: "100dvh" }}>
-          {escalateScreen}
         </div>
       </motion.div>
     </div>

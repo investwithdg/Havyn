@@ -10,14 +10,16 @@ import { collection, doc, setDoc } from "firebase/firestore";
 import type { JournalEntry, Mood, PostpartumProfile, PostpartumSignals, RiskAssessment } from "@/lib/types";
 import { assessPostpartumRisk } from "@/lib/postpartum-risk";
 
-// Swipe Navigation
-import { SwipeContainer } from "@/components/havyn/swipe-container";
+// Navigation
+import { SwipeContainer, type ScreenKey } from "@/components/havyn/swipe-container";
+import { BottomNav } from "@/components/havyn/bottom-nav";
 import { HomeScreen } from "@/components/havyn/home-screen";
 import { JournalScreen } from "@/components/havyn/journal-screen";
 import { JournalSidebar } from "@/components/havyn/journal-sidebar";
 import { CalendarView } from "@/components/havyn/calendar-view";
 import { CheckInScreen } from "@/components/havyn/check-in-screen";
 import { EscalateScreen } from "@/components/havyn/escalate-screen";
+import { AnimatePresence, motion } from "framer-motion";
 
 // Business Logic Hooks
 import { useDailyCheckIn } from "@/hooks/use-daily-check-in";
@@ -55,7 +57,10 @@ export default function HavynAppPage() {
   const { data: userProfile, loading: profileLoading } = useDoc(userRef);
   const { data: journalEntries, loading: entriesLoading } = useCollection<JournalEntry>(journalEntriesRef);
   const { data: appStats } = useDoc(appStatsRef);
-  const postpartumProfile = (userProfile?.postpartumProfile ?? null) as PostpartumProfile | null;
+  // Dev-preview mock session has no Firestore backend (see useFirestore); local
+  // state stands in for the saved profile so onboarding can complete.
+  const [mockPostpartumProfile, setMockPostpartumProfile] = useState<PostpartumProfile | null>(null);
+  const postpartumProfile = (mockPostpartumProfile ?? userProfile?.postpartumProfile ?? null) as PostpartumProfile | null;
 
   // Subscription
   const sub = useSubscription(userProfile, profileLoading);
@@ -67,6 +72,12 @@ export default function HavynAppPage() {
     journalEntries || [], 
     userProfile?.lastPromptDate
   );
+
+  // Navigation: bottom nav + horizontal swipe both drive the same screen state.
+  // Check-in and Escalate are separate full-screen overlays, not swipe destinations —
+  // crisis support in particular must never be gesture-gated.
+  const [activeScreen, setActiveScreen] = useState<ScreenKey>("home");
+  const [checkInOpen, setCheckInOpen] = useState(false);
 
   // State to bridge Check In and Journal
   const [pendingMood, setPendingMood] = useState<Mood>("Okay");
@@ -98,7 +109,11 @@ export default function HavynAppPage() {
   }, [profileLoading, user, postpartumProfile?.consent?.aiSupport]);
 
   const handleSavePostpartumProfile = async (profile: PostpartumProfile) => {
-    if (!userRef) return;
+    if (!userRef) {
+      setMockPostpartumProfile(profile);
+      setProfileSheetOpen(false);
+      return;
+    }
 
     setIsSavingProfile(true);
     try {
@@ -111,10 +126,11 @@ export default function HavynAppPage() {
 
 
   const handleSignOut = async () => {
+    localStorage.removeItem("havyn_dev_mock_user");
     if (auth) {
       await auth.signOut();
-      router.push('/login');
     }
+    router.push('/login');
   };
 
   const handleManageSubscription = async () => {
@@ -141,7 +157,11 @@ export default function HavynAppPage() {
     setActiveRisk(risk);
     setUrgentSupportOpen(risk.level === "urgent");
     setSupportSheetOpen(risk.escalationRecommended && risk.level !== "urgent");
-    
+    setCheckInOpen(false);
+    if (risk.level !== "urgent") {
+      setActiveScreen("journal");
+    }
+
     // We can save a placeholder check-in if user doesn't journal, or wait for the journal.
     // For this flow, we pre-log the check-in to satisfy "hasCheckedInToday" and then the journal will log *another* comprehensive entry, or this is sufficient.
     await dailyCheckIn.submitCheckIn({
@@ -186,8 +206,10 @@ export default function HavynAppPage() {
   if (!user) return null; // Wait for redirect
 
   return (
-    <div className="fixed top-0 left-0 w-full h-[100dvh] bg-background text-foreground overflow-hidden overscroll-none touch-pan-y">
+    <div className="fixed top-0 left-0 w-full h-[100dvh] bg-background text-foreground overflow-hidden overscroll-none">
       <SwipeContainer
+        activeScreen={activeScreen}
+        onScreenChange={setActiveScreen}
         homeScreen={
           <HomeScreen
             user={user}
@@ -202,6 +224,7 @@ export default function HavynAppPage() {
             onManageSubscription={handleManageSubscription}
             onOpenProfile={() => setProfileSheetOpen(true)}
             onOpenSupport={() => setSupportSheetOpen(true)}
+            onOpenCheckIn={() => setCheckInOpen(true)}
             foundingMemberCount={appStats?.foundingMembersCount ?? 0}
           />
         }
@@ -228,22 +251,30 @@ export default function HavynAppPage() {
             triggerPaywall={sub.triggerPaywall}
           />
         }
-        checkInScreen={
-          <CheckInScreen
-            onComplete={handleCheckInComplete}
-            isSubmitting={dailyCheckIn.isSubmitting}
-          />
-        }
-        escalateScreen={
-          <EscalateScreen
-            risk={activeRisk}
-            signals={pendingPostpartum}
-            mood={pendingMood}
-            painLevel={pendingPain}
-            profile={postpartumProfile}
-          />
-        }
       />
+      <BottomNav
+        activeScreen={activeScreen}
+        onNavigate={setActiveScreen}
+        onOpenCheckIn={() => setCheckInOpen(true)}
+        onOpenSupport={() => setSupportSheetOpen(true)}
+      />
+      <AnimatePresence>
+        {checkInOpen && (
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", stiffness: 320, damping: 32 }}
+            className="fixed inset-0 z-50 bg-background"
+          >
+            <CheckInScreen
+              onComplete={handleCheckInComplete}
+              onClose={() => setCheckInOpen(false)}
+              isSubmitting={dailyCheckIn.isSubmitting}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
       {supportSheetOpen && (
         <EscalateScreen
           variant="sheet"

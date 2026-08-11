@@ -22,6 +22,7 @@
 
 # misc
 .DS_Store
+._*
 *.pem
 
 # debug
@@ -43,3 +44,11 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+# capacitor / xcode
+ios/App/App/public
+ios/App/Pods
+ios/App/build
+ios/**/xcuserdata/
+ios/**/*.xcuserstate
+ios/DerivedData

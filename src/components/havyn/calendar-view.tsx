@@ -11,12 +11,12 @@ import { cn } from "@/lib/utils";
 import type { Timestamp } from "firebase/firestore";
 import type { PremiumFeature } from "@/services/subscription-service";
 
-const moodColors: Record<Mood, string> = {
-  Happy: "bg-green-500",
-  Calm: "bg-blue-500",
-  Okay: "bg-yellow-500",
-  Anxious: "bg-orange-500",
-  Sad: "bg-gray-500",
+const moodStyles: Record<Mood, { bg: string; text: string; dot: string }> = {
+  Happy: { bg: "bg-primary/15", text: "text-primary", dot: "bg-primary" },
+  Calm: { bg: "bg-tertiary/15", text: "text-tertiary", dot: "bg-tertiary" },
+  Okay: { bg: "bg-accent/20", text: "text-accent-foreground", dot: "bg-accent" },
+  Anxious: { bg: "bg-orange-500/15", text: "text-orange-700 dark:text-orange-300", dot: "bg-orange-500" },
+  Sad: { bg: "bg-zinc-400/15", text: "text-zinc-600 dark:text-zinc-300", dot: "bg-zinc-400" },
 };
 
 function toDate(date: Date | Timestamp): Date {
@@ -35,15 +35,19 @@ function CustomDay(props: DayProps & { entries: JournalEntry[] }) {
   );
 
   if (entry) {
+    const style = moodStyles[entry.mood];
+    const notablePain = entry.painLevel >= 6;
     return (
-      <div className="relative flex items-center justify-center h-full">
+      <div
+        className={cn(
+          "relative flex h-full w-full items-center justify-center rounded-xl font-medium",
+          style.bg,
+          style.text,
+          notablePain && "ring-2 ring-destructive/60"
+        )}
+      >
         {(props as any).children || date.getDate()}
-        <div
-          className={cn(
-            "absolute bottom-1 w-1.5 h-1.5 rounded-full",
-            moodColors[entry.mood]
-          )}
-        />
+        <div className={cn("absolute bottom-1 h-1 w-1 rounded-full", style.dot)} />
       </div>
     );
   }
@@ -107,53 +111,51 @@ export function CalendarView({
   triggerPaywall?: (feature: PremiumFeature) => void;
 }) {
   return (
-    <div className="relative flex h-full flex-col overflow-y-auto px-4 py-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]" data-scrollable="true">
-      {/* Wayfinding */}
-      <div className="absolute top-1/2 -right-6 -translate-y-1/2 opacity-30 text-xs font-medium uppercase tracking-widest text-zinc-400 rotate-90 origin-right">
-         <span className="flex items-center gap-1">Swipe Home</span>
-      </div>
+    <div className="relative flex h-full flex-col overflow-y-auto px-4 py-[max(1rem,env(safe-area-inset-top))] pb-[max(5.5rem,calc(env(safe-area-inset-bottom)+4.5rem))]" data-scrollable="true">
       <Card className="shrink-0">
         <CardHeader>
           <CardTitle className="font-headline text-primary">Your Journey</CardTitle>
           <CardDescription>Visualize your mood and pain trends over time.</CardDescription>
         </CardHeader>
-        <CardContent className="flex justify-center overflow-x-auto">
+        <CardContent className="pb-3">
           <DayPicker
             mode="single"
             showOutsideDays
-            className="p-0"
+            className="w-full p-0"
             classNames={{
-              months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-              month: "space-y-4",
+              months: "flex flex-col w-full",
+              month: "w-full space-y-3",
               caption: "flex justify-center pt-1 relative items-center",
               caption_label: "text-sm font-medium",
               nav: "space-x-1 flex items-center",
               nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-              table: "w-full border-collapse space-y-1",
-              head_row: "flex",
-              head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-              row: "flex w-full mt-2",
-              cell: "h-9 w-9 text-center text-sm p-0 relative",
-              day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-full hover:bg-accent/20 focus:bg-accent/20",
-              day_selected: "bg-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-              day_today: "bg-primary/10 text-primary rounded-full",
-              day_outside: "text-muted-foreground opacity-50",
+              table: "w-full border-collapse",
+              head_row: "grid grid-cols-7",
+              head_cell: "text-muted-foreground font-normal text-[0.75rem] text-center pb-1",
+              row: "grid grid-cols-7 mt-1.5",
+              cell: "aspect-square text-center text-sm p-0.5 relative",
+              day: "h-full w-full p-0 font-normal aria-selected:opacity-100 rounded-xl hover:bg-accent/20 focus:bg-accent/20",
+              day_selected: "!bg-accent !text-accent-foreground",
+              day_today: "font-semibold ring-1 ring-primary/40 rounded-xl",
+              day_outside: "text-muted-foreground/50",
               day_disabled: "text-muted-foreground opacity-50",
             }}
             components={{
               Day: (props) => <CustomDay {...props} entries={entries} />,
             }}
           />
-        </CardContent>
-        <CardContent>
-            <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center text-xs">
-                {Object.entries(moodColors).map(([mood, colorClass]) => (
-                    <div key={mood} className="flex items-center gap-2">
-                        <div className={cn("w-2.5 h-2.5 rounded-full", colorClass)}></div>
-                        <span>{mood}</span>
-                    </div>
-                ))}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+            {Object.entries(moodStyles).map(([mood, style]) => (
+              <div key={mood} className="flex items-center gap-1.5">
+                <div className={cn("h-2 w-2 rounded-full", style.dot)} />
+                <span>{mood}</span>
+              </div>
+            ))}
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-full ring-2 ring-destructive/60" />
+              <span>Notable pain</span>
             </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -170,9 +172,9 @@ export function CalendarView({
             <TrendChart entries={entries} />
           ) : (
             <div className="relative">
-              <div className="h-[140px] bg-gradient-to-b from-[#E09D00]/5 to-transparent rounded-xl flex flex-col items-center justify-center gap-3 border border-[#E09D00]/20">
-                <div className="w-10 h-10 rounded-full bg-[#E09D00]/10 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-[#E09D00]" />
+              <div className="h-[140px] bg-gradient-to-b from-accent/5 to-transparent rounded-xl flex flex-col items-center justify-center gap-3 border border-accent/20">
+                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-accent" />
                 </div>
                 <div className="text-center px-4">
                   <p className="text-sm font-medium text-foreground">Premium Feature</p>
@@ -184,7 +186,7 @@ export function CalendarView({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs h-7 border-[#E09D00]/40 text-[#E09D00] hover:bg-[#E09D00]/10"
+                    className="text-xs h-7 border-accent/40 text-accent hover:bg-accent/10"
                     onClick={() => triggerPaywall("pain_trend_insights")}
                   >
                     Unlock Trends

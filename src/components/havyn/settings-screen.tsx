@@ -63,7 +63,7 @@ export function SettingsScreen({
                   variant={subscription.isPremium ? "default" : "secondary"}
                   className={
                     subscription.isPremium
-                      ? "bg-[#E09D00] text-white"
+                      ? "bg-accent text-white"
                       : ""
                   }
                 >
@@ -93,7 +93,7 @@ export function SettingsScreen({
                 </Button>
               ) : (
                 <Button
-                  className="w-full bg-[#E09D00] hover:bg-[#E09D00]/90 text-white"
+                  className="w-full bg-accent hover:bg-accent/90 text-white"
                   onClick={() => triggerPaywall("unlimited_ai_prompts")}
                 >
                   <Crown className="w-4 h-4 mr-2" />

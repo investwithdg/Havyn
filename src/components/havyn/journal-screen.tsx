@@ -45,7 +45,7 @@ export function JournalScreen({
         <button 
           onClick={handleSave} 
           disabled={!content.trim() || isSubmitting}
-          className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-emerald-600 disabled:opacity-30 disabled:text-zinc-400 transition-opacity"
+          className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-primary disabled:opacity-30 disabled:text-muted-foreground transition-opacity"
         >
           {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <><Check size={16} /> Save</>}
         </button>
@@ -80,7 +80,7 @@ export function JournalScreen({
       </div>
 
       {/* Wayfinding */}
-      <div className="absolute top-1/2 -left-3 -translate-y-1/2 opacity-30 text-xs font-medium uppercase tracking-widest text-[#d4c5b0] dark:text-zinc-500 flex flex-col items-center gap-2 -rotate-90 origin-left">
+      <div className="absolute top-1/2 left-1 -translate-y-1/2 opacity-30 text-xs font-medium uppercase tracking-widest text-[#d4c5b0] dark:text-zinc-500 flex flex-col items-center gap-2 -rotate-90 origin-left">
          <span className="flex items-center gap-1">Swipe Home</span>
       </div>
 

@@ -38,6 +38,7 @@ export function HomeScreen({
   onManageSubscription,
   onOpenProfile,
   onOpenSupport,
+  onOpenCheckIn,
   foundingMemberCount,
 }: {
   user: any;
@@ -52,6 +53,7 @@ export function HomeScreen({
   onManageSubscription?: () => void;
   onOpenProfile?: () => void;
   onOpenSupport?: () => void;
+  onOpenCheckIn?: () => void;
   foundingMemberCount?: number;
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -66,20 +68,20 @@ export function HomeScreen({
   const displayName = user?.displayName?.split(" ")?.[0] || "there";
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-y-auto bg-emerald-50 px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] dark:bg-zinc-950" data-scrollable="true">
+    <div className="relative flex h-full w-full flex-col overflow-y-auto bg-background px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]" data-scrollable="true">
       <div className="mx-auto flex w-full max-w-sm flex-col gap-4">
         <header className="flex items-start justify-between gap-4 pt-2">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700/70 dark:text-emerald-300/70">Today</p>
-            <h1 className="mt-1 text-2xl font-semibold text-zinc-950 dark:text-zinc-50">Hi, {displayName}</h1>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary/70">Today</p>
+            <h1 className="mt-1 text-2xl font-semibold text-foreground">Hi, {displayName}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               {postpartumWeek ? `Postpartum week ${postpartumWeek}` : "Set your postpartum profile for better support"}
             </p>
           </div>
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-zinc-700 shadow-sm dark:bg-zinc-900 dark:text-zinc-200"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-card text-foreground shadow-sm"
             aria-label="Open menu"
           >
             <Menu size={20} />
@@ -93,16 +95,21 @@ export function HomeScreen({
           />
         )}
 
-        <section className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm dark:border-emerald-900/30 dark:bg-zinc-900">
+        <button
+          type="button"
+          onClick={onOpenCheckIn}
+          disabled={!!todayEntry}
+          className="rounded-2xl border border-primary/15 bg-primary/5 p-4 text-left shadow-sm transition-colors disabled:cursor-default"
+        >
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-base font-semibold text-zinc-950 dark:text-zinc-50">
+              <h2 className="text-base font-semibold text-foreground">
                 {todayEntry ? "You checked in today" : "Start with a quick check-in"}
               </h2>
-              <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                 {todayEntry
                   ? getCheckInSummary(todayEntry)
-                  : "Swipe down to tell Havyn how your body, mind, sleep, feeding, and support are doing."}
+                  : "Tap to tell Havyn how your body, mind, sleep, feeding, and support are doing."}
               </p>
             </div>
             <StatusBadge riskLevel={riskLevel} hasTodayEntry={!!todayEntry} />
@@ -114,18 +121,18 @@ export function HomeScreen({
             <MetricTile icon={<HeartHandshake size={15} />} label="Support" value={formatSupport(todayEntry?.postpartum?.supportToday)} />
           </div>
           {latestEntryLabel && (
-            <p className="mt-3 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
               Latest saved check-in was {latestEntryLabel}. Today metrics will fill in after a new check-in.
             </p>
           )}
-        </section>
+        </button>
 
-        <section className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
           <div className="mb-3 flex items-center gap-2">
-            <NotebookPen size={17} className="text-emerald-600" />
-            <h2 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">Havyn reflection</h2>
+            <NotebookPen size={17} className="text-primary" />
+            <h2 className="text-sm font-semibold text-foreground">Havyn reflection</h2>
           </div>
-          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+          <p className="text-sm leading-relaxed text-foreground/80">
             {prompt || encouragement || "After your next check-in, Havyn will offer one grounded reflection or next step for the moment you are in."}
           </p>
         </section>
@@ -134,28 +141,28 @@ export function HomeScreen({
           <button
             type="button"
             onClick={onOpenSupport}
-            className="flex min-h-24 flex-col justify-between rounded-2xl border border-red-100 bg-white p-4 text-left shadow-sm transition-colors hover:bg-red-50 dark:border-red-900/30 dark:bg-zinc-900 dark:hover:bg-red-950/20"
+            className="flex min-h-24 flex-col justify-between rounded-2xl border border-destructive/20 bg-card p-4 text-left shadow-sm transition-colors hover:bg-destructive/5"
           >
-            <PhoneCall size={20} className="text-red-500" />
-            <span className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">Get support now</span>
+            <PhoneCall size={20} className="text-destructive" />
+            <span className="text-sm font-semibold text-foreground">Get support now</span>
           </button>
           <button
             type="button"
             onClick={onOpenProfile}
-            className="flex min-h-24 flex-col justify-between rounded-2xl border border-blue-100 bg-white p-4 text-left shadow-sm transition-colors hover:bg-blue-50 dark:border-blue-900/30 dark:bg-zinc-900 dark:hover:bg-blue-950/20"
+            className="flex min-h-24 flex-col justify-between rounded-2xl border border-tertiary/20 bg-card p-4 text-left shadow-sm transition-colors hover:bg-tertiary/5"
           >
-            <User size={20} className="text-blue-500" />
-            <span className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">Update profile</span>
+            <User size={20} className="text-tertiary" />
+            <span className="text-sm font-semibold text-foreground">Update profile</span>
           </button>
         </section>
 
-        <section className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <CalendarDays size={17} className="text-emerald-600" />
-              <h2 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">7-day pattern</h2>
+              <CalendarDays size={17} className="text-primary" />
+              <h2 className="text-sm font-semibold text-foreground">7-day pattern</h2>
             </div>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">{trends.count}/7 days</span>
+            <span className="text-xs text-muted-foreground">{trends.count}/7 days</span>
           </div>
           <div className="grid grid-cols-3 gap-2">
             <TrendTile label="Mood" value={trends.mostCommonMood || "--"} />
@@ -164,13 +171,8 @@ export function HomeScreen({
           </div>
         </section>
 
-        <div className="rounded-2xl border border-emerald-100 bg-white/80 p-4 text-center dark:border-emerald-900/30 dark:bg-zinc-900/80">
-          <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700/70 dark:text-emerald-300/70">Navigation</p>
-          <p className="mt-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-            Swipe down for check-in, right for calendar, left for journal, up for support.
-          </p>
-        </div>
       </div>
+      <div className="h-20" aria-hidden="true" />{/* clearance above the fixed bottom nav */}
 
       <AnimatePresence>
         {menuOpen && (
@@ -189,24 +191,24 @@ export function HomeScreen({
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
-            className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-sm flex-col gap-2 rounded-[1.5rem] border border-zinc-100 bg-white p-4 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900"
+            className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-sm flex-col gap-2 rounded-[1.5rem] border border-border bg-card p-4 shadow-2xl"
           >
             <div className="mb-2 flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
-                <span className="font-semibold">Menu</span>
+                <span className="font-semibold text-foreground">Menu</span>
                 {isPremium && (
-                  <Badge variant="secondary" className="bg-[#E09D00]/15 text-[#E09D00] text-[10px] px-1.5 py-0">
+                  <Badge variant="secondary" className="bg-accent/15 text-accent text-[10px] px-1.5 py-0">
                     <Crown className="w-3 h-3 mr-0.5" />
                     Premium
                   </Badge>
                 )}
               </div>
-              <button onClick={() => setMenuOpen(false)} className="rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+              <button onClick={() => setMenuOpen(false)} className="rounded-full p-2 text-foreground hover:bg-muted">
                 <X size={16} />
               </button>
             </div>
-            <MenuButton icon={<User size={20} className="text-blue-500" />} label="Profile" onClick={() => { setMenuOpen(false); onOpenProfile?.(); }} />
-            <MenuButton icon={<Settings size={20} className="text-zinc-500" />} label="Settings" onClick={() => { setMenuOpen(false); setSettingsOpen(true); }} />
+            <MenuButton icon={<User size={20} className="text-tertiary" />} label="Profile" onClick={() => { setMenuOpen(false); onOpenProfile?.(); }} />
+            <MenuButton icon={<Settings size={20} className="text-muted-foreground" />} label="Settings" onClick={() => { setMenuOpen(false); setSettingsOpen(true); }} />
             <MenuButton icon={<ShieldAlert size={20} />} label="Sign Out" danger onClick={onSignOut} />
           </motion.div>
         )}
@@ -283,12 +285,12 @@ function getSevenDayTrends(entries: JournalEntry[]) {
 
 function StatusBadge({ riskLevel, hasTodayEntry }: { riskLevel: RiskLevel; hasTodayEntry: boolean }) {
   const className = riskLevel === "urgent"
-    ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-200"
+    ? "bg-destructive/15 text-destructive"
     : riskLevel === "elevated"
-      ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
+      ? "bg-accent/20 text-accent-foreground"
       : hasTodayEntry
-        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200"
-        : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300";
+        ? "bg-primary/15 text-primary"
+        : "bg-muted text-muted-foreground";
 
   return (
     <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${className}`}>
@@ -299,19 +301,19 @@ function StatusBadge({ riskLevel, hasTodayEntry }: { riskLevel: RiskLevel; hasTo
 
 function MetricTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-emerald-50 p-3 dark:bg-emerald-950/20">
-      <div className="mb-2 text-emerald-700 dark:text-emerald-300">{icon}</div>
-      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">{label}</p>
-      <p className="mt-1 truncate text-sm font-semibold text-zinc-950 dark:text-zinc-50">{value}</p>
+    <div className="rounded-xl bg-primary/8 p-3">
+      <div className="mb-2 text-primary">{icon}</div>
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="mt-1 truncate text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
 }
 
 function TrendTile({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-xl bg-zinc-50 p-3 text-center dark:bg-zinc-950">
-      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">{label}</p>
-      <p className="mt-1 truncate text-sm font-semibold text-zinc-950 dark:text-zinc-50">{value}</p>
+    <div className="rounded-xl bg-muted p-3 text-center">
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="mt-1 truncate text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
 }
@@ -322,7 +324,7 @@ function MenuButton({ icon, label, onClick, danger }: { icon: React.ReactNode; l
       type="button"
       onClick={onClick}
       className={`flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
-        danger ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" : "hover:bg-zinc-50 dark:hover:bg-zinc-800"
+        danger ? "text-destructive hover:bg-destructive/10" : "text-foreground hover:bg-muted"
       }`}
     >
       {icon}

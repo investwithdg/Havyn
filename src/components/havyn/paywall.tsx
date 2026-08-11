@@ -96,8 +96,8 @@ export function Paywall({ feature, isOpen, onClose, onSubscribe }: PaywallProps)
           <div className="space-y-3">
             {BENEFITS.map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-3 px-2">
-                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
-                  <Icon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                  <Icon className="w-4 h-4 text-primary" />
                 </div>
                 <span className="text-sm font-medium">{label}</span>
               </div>

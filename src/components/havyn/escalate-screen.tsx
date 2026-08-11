@@ -66,13 +66,13 @@ export function EscalateScreen({
     ? "fixed inset-0 z-[80] flex items-end justify-center bg-black/35 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm"
     : variant === "urgent"
       ? "fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-red-950 px-4 py-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
-      : "relative flex h-full w-full flex-col items-center justify-center overflow-y-auto bg-stone-50 p-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(3rem,env(safe-area-inset-top))] dark:bg-zinc-900";
+      : "relative flex h-full w-full flex-col items-center justify-center overflow-y-auto bg-background p-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(3rem,env(safe-area-inset-top))]";
 
   const panelClass = variant === "sheet"
-    ? "max-h-[92dvh] w-full max-w-sm overflow-y-auto rounded-[1.75rem] border border-red-100 bg-white p-6 shadow-2xl dark:border-red-900/30 dark:bg-zinc-900"
+    ? "max-h-[92dvh] w-full max-w-sm overflow-y-auto rounded-[1.75rem] border border-destructive/15 bg-card p-6 shadow-2xl"
     : variant === "urgent"
       ? "max-h-[96dvh] w-full max-w-sm overflow-y-auto rounded-[1.75rem] border border-red-300 bg-white p-6 shadow-2xl"
-      : "w-full max-w-sm rounded-3xl border border-red-100 bg-white p-8 shadow-xl dark:border-red-900/30 dark:bg-zinc-800";
+      : "w-full max-w-sm rounded-3xl border border-destructive/15 bg-card p-8 shadow-xl";
 
   return (
     <div className={containerClass} data-scrollable="true">
@@ -92,7 +92,7 @@ export function EscalateScreen({
             <button
               type="button"
               onClick={onDismiss}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-600 transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted/70"
               aria-label="Close support panel"
             >
               <X size={18} />
@@ -100,10 +100,10 @@ export function EscalateScreen({
           )}
         </div>
 
-        <h2 className="mb-3 text-2xl font-semibold text-zinc-950">
+        <h2 className="mb-3 text-2xl font-semibold text-foreground">
           {isUrgent ? "Get a real person involved now" : "You deserve human support"}
         </h2>
-        <p className="mb-5 text-sm leading-relaxed text-zinc-600">
+        <p className="mb-5 text-sm leading-relaxed text-muted-foreground">
           {isUrgent
             ? "Your check-in included urgent safety signals. Do not stay alone with this. Call or text a crisis resource, contact your emergency contact, or call local emergency services if there is immediate danger."
             : "Your check-in suggests today may need more support than journaling alone. Havyn can help summarize what is happening, but concerning postpartum symptoms deserve a real person."}
@@ -123,22 +123,22 @@ export function EscalateScreen({
         ) : null}
 
         {(emergencyContactLabel || profile?.careTeam) && (
-          <div className="mb-5 space-y-2 rounded-2xl border border-zinc-100 bg-zinc-50 p-4">
+          <div className="mb-5 space-y-2 rounded-2xl border border-border bg-muted p-4">
             {emergencyContactLabel && (
               <div className="flex gap-3">
-                <UserRound className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                <UserRound className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Emergency contact</p>
-                  <p className="mt-1 text-sm text-zinc-800">{emergencyContactLabel}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Emergency contact</p>
+                  <p className="mt-1 text-sm text-foreground">{emergencyContactLabel}</p>
                 </div>
               </div>
             )}
             {profile?.careTeam && (
               <div className="flex gap-3">
-                <Stethoscope className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                <Stethoscope className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Care team</p>
-                  <p className="mt-1 text-sm text-zinc-800">{profile.careTeam}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Care team</p>
+                  <p className="mt-1 text-sm text-foreground">{profile.careTeam}</p>
                 </div>
               </div>
             )}
@@ -176,7 +176,7 @@ export function EscalateScreen({
           {emergencyContactHref && (
             <a
               href={emergencyContactHref}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-zinc-900 py-4 font-medium text-white transition-colors hover:bg-zinc-800"
+              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-foreground py-4 font-medium text-background transition-colors hover:bg-foreground/90"
             >
               <PhoneCall size={18} />
               <span>Call Emergency Contact</span>
@@ -202,17 +202,17 @@ export function EscalateScreen({
           <button
             type="button"
             onClick={handleCopySummary}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-zinc-100 py-4 font-medium text-zinc-800 transition-colors hover:bg-zinc-200"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-muted py-4 font-medium text-foreground transition-colors hover:bg-muted/70"
           >
             {copied ? <Check size={18} /> : <Copy size={18} />}
             <span>{copied ? "Summary Copied" : "Copy Status Summary"}</span>
           </button>
         </div>
 
-        <div className="mt-6 border-t border-zinc-100 pt-5">
+        <div className="mt-6 border-t border-border pt-5">
           <div className="mb-3 flex items-center gap-2">
-            <Heart size={14} className="text-red-400" />
-            <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <Heart size={14} className="text-destructive/70" />
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Immediate Help
             </span>
           </div>
@@ -221,17 +221,17 @@ export function EscalateScreen({
               <a
                 key={resource.name}
                 href={resource.url}
-                className="group flex items-center justify-between rounded-xl bg-red-50 px-3 py-2.5 transition-colors hover:bg-red-100"
+                className="group flex items-center justify-between rounded-xl bg-destructive/5 px-3 py-2.5 transition-colors hover:bg-destructive/10"
               >
                 <div>
-                  <p className="text-xs font-medium text-zinc-800">
+                  <p className="text-xs font-medium text-foreground">
                     {resource.name}
                   </p>
-                  <p className="text-[11px] text-zinc-500">
+                  <p className="text-[11px] text-muted-foreground">
                     {resource.contact}
                   </p>
                 </div>
-                <ExternalLink size={12} className="shrink-0 text-zinc-400 transition-colors group-hover:text-red-500" />
+                <ExternalLink size={12} className="shrink-0 text-muted-foreground transition-colors group-hover:text-destructive" />
               </a>
             ))}
           </div>
@@ -240,10 +240,10 @@ export function EscalateScreen({
         <button
           type="button"
           onClick={handleCopySummary}
-          className="mt-5 flex w-full items-start gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-colors hover:bg-zinc-100"
+          className="mt-5 flex w-full items-start gap-3 rounded-2xl border border-border bg-muted p-3 text-left transition-colors hover:bg-muted/70"
         >
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" />
-          <span className="text-[11px] leading-relaxed text-zinc-600">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+          <span className="text-[11px] leading-relaxed text-muted-foreground">
             {supportSummary}
           </span>
         </button>
@@ -252,13 +252,13 @@ export function EscalateScreen({
           <button
             type="button"
             onClick={onDismiss}
-            className="mt-4 w-full rounded-full border border-zinc-200 py-3 text-sm font-medium text-zinc-700"
+            className="mt-4 w-full rounded-full border border-border py-3 text-sm font-medium text-foreground"
           >
             I have contacted support
           </button>
         )}
 
-        <p className="mt-5 text-[11px] leading-relaxed text-zinc-500">
+        <p className="mt-5 text-[11px] leading-relaxed text-muted-foreground">
           Havyn is not emergency care. If there is immediate danger, call local emergency services.
         </p>
       </div>

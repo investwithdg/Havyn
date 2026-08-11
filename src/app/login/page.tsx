@@ -55,6 +55,13 @@ export default function LoginPage() {
     });
   };
 
+  const handleGuestSignIn = () => {
+    // Dev-only local preview bypass — this project's Firebase API key is invalid,
+    // so we skip Firebase auth entirely and use a local mock session.
+    localStorage.setItem("havyn_dev_mock_user", "1");
+    window.location.href = "/";
+  };
+
   const handleGoogleSignIn = () => {
     if (!auth) return;
     startTransition(async () => {
@@ -160,6 +167,10 @@ export default function LoginPage() {
         <Button variant="outline" className="w-full mt-6" onClick={handleGoogleSignIn} disabled={isPending}>
             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2" />}
             Google
+        </Button>
+        <Button variant="ghost" className="w-full mt-2 text-xs text-muted-foreground" onClick={handleGuestSignIn} disabled={isPending}>
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Continue as Guest (Dev Preview)
         </Button>
       </Tabs>
     </div>
